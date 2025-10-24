@@ -43,7 +43,7 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
 export type Client = typeof clients.$inferSelect;
 export type ServiceCode = {
-  service: string;
+  service: "inwi" | "orange" | "maroc-telecom" | "water" | "gas" | "electricity";
   code: string;
   accountHolderName?: string;
   address?: string;

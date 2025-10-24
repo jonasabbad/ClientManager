@@ -44,7 +44,13 @@ export default function ClientDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [newCode, setNewCode] = useState({
+  const [newCode, setNewCode] = useState<{
+    code: string;
+    service: ServiceCode["service"] | "";
+    accountHolderName: string;
+    address: string;
+    phoneNumber: string;
+  }>({
     code: "",
     service: "",
     accountHolderName: "",
@@ -134,7 +140,17 @@ export default function ClientDetail() {
       });
       return;
     }
-    addCodeMutation.mutate(newCode as ServiceCode);
+    
+    // Normalize optional fields to undefined instead of empty strings
+    const normalizedCode: ServiceCode = {
+      code: newCode.code,
+      service: newCode.service,
+      accountHolderName: newCode.accountHolderName,
+      address: newCode.address.trim() || undefined,
+      phoneNumber: newCode.phoneNumber.trim() || undefined,
+    };
+    
+    addCodeMutation.mutate(normalizedCode);
   };
 
   const handlePrint80mm = () => {
@@ -469,7 +485,7 @@ export default function ClientDetail() {
               />
               <Select
                 value={newCode.service}
-                onValueChange={(value) => setNewCode({ ...newCode, service: value })}
+                onValueChange={(value) => setNewCode({ ...newCode, service: value as ServiceCode["service"] })}
               >
                 <SelectTrigger data-testid="select-quick-service">
                   <SelectValue placeholder="Service Type" />
