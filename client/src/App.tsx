@@ -10,6 +10,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
+import RecentActivity from "@/pages/RecentActivity";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,12 +20,8 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/clients" component={Clients} />
       <Route path="/clients/:id" component={ClientDetail} />
-      <Route path="/settings" component={() => (
-        <div className="space-y-6">
-          <h1 className="text-3xl font-semibold">Settings</h1>
-          <p className="text-muted-foreground">Settings page coming soon...</p>
-        </div>
-      )} />
+      <Route path="/activity" component={RecentActivity} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

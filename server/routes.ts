@@ -53,6 +53,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertClientSchema.parse(req.body);
       const newClient = await storage.createClient(validatedData);
+      
+      // Log activity
+      await storage.createActivity({
+        clientId: newClient.id,
+        action: "created",
+        description: `Created new client with ${newClient.codes.length} service code(s)`,
+        clientName: newClient.name,
+      });
+      
       res.status(201).json(newClient);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -71,6 +80,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid client ID" });
       }
 
+      const existingClient = await storage.getClient(id);
+      if (!existingClient) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
       const validatedData = updateClientSchema.parse({ ...req.body, id });
       const { id: _id, ...updateData } = validatedData;
       
@@ -78,6 +92,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedClient) {
         return res.status(404).json({ error: "Client not found" });
       }
+
+      // Check if codes were added
+      const oldCodesLength = existingClient.codes.length;
+      const newCodesLength = updatedClient.codes.length;
+      const action = newCodesLength > oldCodesLength ? "code_added" : "updated";
+      const description = newCodesLength > oldCodesLength
+        ? `Added ${newCodesLength - oldCodesLength} new service code(s)`
+        : "Updated client information";
+
+      // Log activity
+      await storage.createActivity({
+        clientId: updatedClient.id,
+        action,
+        description,
+        clientName: updatedClient.name,
+      });
 
       res.json(updatedClient);
     } catch (error) {
@@ -96,6 +126,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid client ID" });
       }
+
+      const client = await storage.getClient(id);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      // Log activity before deletion
+      await storage.createActivity({
+        clientId: null,
+        action: "deleted",
+        description: `Deleted client with ${client.codes.length} service code(s)`,
+        clientName: client.name,
+      });
 
       const deleted = await storage.deleteClient(id);
       if (!deleted) {
@@ -117,6 +160,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching statistics:", error);
       res.status(500).json({ error: "Failed to fetch statistics" });
+    }
+  });
+
+  // Get all activities
+  app.get("/api/activities", async (req, res) => {
+    try {
+      const dateParam = req.query.date;
+      let activities;
+      
+      if (dateParam && typeof dateParam === 'string') {
+        const date = new Date(dateParam);
+        activities = await storage.getActivitiesByDate(date);
+      } else {
+        activities = await storage.getAllActivities();
+      }
+      
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
     }
   });
 

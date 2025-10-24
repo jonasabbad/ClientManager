@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { clients, type Client, type InsertClient, type UpdateClient } from "@shared/schema";
-import { eq, or, ilike, sql } from "drizzle-orm";
+import { clients, activities, type Client, type InsertClient, type UpdateClient, type Activity, type InsertActivity } from "@shared/schema";
+import { eq, or, ilike, sql, gte, lte, desc } from "drizzle-orm";
 
 export interface IStorage {
   getAllClients(): Promise<Client[]>;
@@ -15,6 +15,10 @@ export interface IStorage {
     clientsThisMonth: number;
     serviceBreakdown: Record<string, number>;
   }>;
+  // Activity methods
+  getAllActivities(): Promise<Activity[]>;
+  getActivitiesByDate(date: Date): Promise<Activity[]>;
+  createActivity(activity: InsertActivity): Promise<Activity>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -102,6 +106,33 @@ export class DatabaseStorage implements IStorage {
       clientsThisMonth,
       serviceBreakdown,
     };
+  }
+
+  async getAllActivities(): Promise<Activity[]> {
+    return await db.select().from(activities).orderBy(desc(activities.createdAt)).limit(100);
+  }
+
+  async getActivitiesByDate(date: Date): Promise<Activity[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return await db
+      .select()
+      .from(activities)
+      .where(
+        sql`${activities.createdAt} >= ${startOfDay} AND ${activities.createdAt} <= ${endOfDay}`
+      )
+      .orderBy(desc(activities.createdAt));
+  }
+
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    const result = await db.insert(activities).values({
+      ...activity,
+      createdAt: new Date(),
+    }).returning();
+    return result[0];
   }
 }
 
