@@ -7,7 +7,13 @@ export const clients = pgTable("clients", {
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
-  codes: jsonb("codes").notNull().$type<{ service: string; code: string }[]>(),
+  codes: jsonb("codes").notNull().$type<{ 
+    service: string; 
+    code: string;
+    accountHolderName: string;
+    address?: string;
+    phoneNumber?: string;
+  }[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -19,6 +25,9 @@ export const insertClientSchema = createInsertSchema(clients, {
   codes: z.array(z.object({
     service: z.enum(["inwi", "orange", "maroc-telecom", "water", "gas", "electricity"]),
     code: z.string().min(1, "Code is required"),
+    accountHolderName: z.string().min(1, "Account holder name is required"),
+    address: z.string().optional(),
+    phoneNumber: z.string().optional(),
   })),
 }).omit({
   id: true,

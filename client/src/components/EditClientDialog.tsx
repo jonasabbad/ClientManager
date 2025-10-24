@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertClientSchema } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card } from "@/components/ui/card";
 
 interface EditClientDialogProps {
   client: Client;
@@ -23,7 +24,12 @@ const availableServices: ServiceType[] = ["inwi", "orange", "maroc-telecom", "wa
 
 export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditClientDialogProps) {
   const [selectedService, setSelectedService] = useState<ServiceType>("inwi");
-  const [newCode, setNewCode] = useState("");
+  const [newCode, setNewCode] = useState({
+    code: "",
+    accountHolderName: "",
+    address: "",
+    phoneNumber: "",
+  });
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
@@ -31,7 +37,13 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
       name: client.name,
       phone: client.phone,
       email: client.email,
-      codes: client.codes.map(c => ({ service: c.service as ServiceType, code: c.code })),
+      codes: client.codes.map(c => ({
+        service: c.service as ServiceType,
+        code: c.code,
+        accountHolderName: c.accountHolderName || "",
+        address: c.address,
+        phoneNumber: c.phoneNumber,
+      })),
     },
   });
 
@@ -42,14 +54,34 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
       name: client.name,
       phone: client.phone,
       email: client.email,
-      codes: client.codes.map(c => ({ service: c.service as ServiceType, code: c.code })),
+      codes: client.codes.map(c => ({
+        service: c.service as ServiceType,
+        code: c.code,
+        accountHolderName: c.accountHolderName || "",
+        address: c.address,
+        phoneNumber: c.phoneNumber,
+      })),
     });
   }, [client, form]);
 
   const handleAddCode = () => {
-    if (newCode && !codes.some(c => c.service === selectedService)) {
-      form.setValue("codes", [...codes, { service: selectedService, code: newCode }]);
-      setNewCode("");
+    if (newCode.code && newCode.accountHolderName && !codes.some(c => c.service === selectedService)) {
+      form.setValue("codes", [
+        ...codes,
+        {
+          service: selectedService,
+          code: newCode.code,
+          accountHolderName: newCode.accountHolderName,
+          address: newCode.address || undefined,
+          phoneNumber: newCode.phoneNumber || undefined,
+        }
+      ]);
+      setNewCode({
+        code: "",
+        accountHolderName: "",
+        address: "",
+        phoneNumber: "",
+      });
     }
   };
 
@@ -63,7 +95,7 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
         </DialogHeader>
@@ -133,50 +165,116 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
               {codes.length > 0 && (
                 <div className="space-y-3">
                   {codes.map((codeItem) => (
-                    <div key={codeItem.service} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <ServiceBadge service={codeItem.service as ServiceType} />
-                      <code className="flex-1 font-mono text-sm">{codeItem.code}</code>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleRemoveCode(codeItem.service as ServiceType)}
-                        data-testid={`button-edit-remove-code-${codeItem.service}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Card key={codeItem.service} className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <ServiceBadge service={codeItem.service as ServiceType} />
+                            <code className="font-mono text-sm font-medium">{codeItem.code}</code>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <div><span className="text-muted-foreground">Account Holder:</span> {codeItem.accountHolderName}</div>
+                            {codeItem.address && (
+                              <div><span className="text-muted-foreground">Address:</span> {codeItem.address}</div>
+                            )}
+                            {codeItem.phoneNumber && (
+                              <div><span className="text-muted-foreground">Phone:</span> {codeItem.phoneNumber}</div>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleRemoveCode(codeItem.service as ServiceType)}
+                          data-testid={`button-edit-remove-code-${codeItem.service}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Select value={selectedService} onValueChange={(value) => setSelectedService(value as ServiceType)}>
-                  <SelectTrigger className="w-48" data-testid="select-edit-service">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableServices.map((service) => (
-                      <SelectItem key={service} value={service}>
-                        {service.charAt(0).toUpperCase() + service.slice(1).replace('-', ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Input
-                  placeholder="Enter code"
-                  value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
-                  className="flex-1"
-                  data-testid="input-edit-service-code"
-                />
-                
-                <Button onClick={handleAddCode} data-testid="button-edit-add-code">
+              <Card className="p-4 space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <Label>Service Type</Label>
+                    <Select value={selectedService} onValueChange={(value) => setSelectedService(value as ServiceType)}>
+                      <SelectTrigger className="w-full mt-1" data-testid="select-edit-service">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableServices.map((service) => (
+                          <SelectItem key={service} value={service}>
+                            {service.charAt(0).toUpperCase() + service.slice(1).replace('-', ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Service Code *</Label>
+                      <Input
+                        placeholder="Enter code"
+                        value={newCode.code}
+                        onChange={(e) => setNewCode({...newCode, code: e.target.value})}
+                        className="mt-1"
+                        data-testid="input-edit-service-code"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Account Holder Name *</Label>
+                      <Input
+                        placeholder="Full name"
+                        value={newCode.accountHolderName}
+                        onChange={(e) => setNewCode({...newCode, accountHolderName: e.target.value})}
+                        className="mt-1"
+                        data-testid="input-edit-account-holder-name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Address (Optional)</Label>
+                      <Input
+                        placeholder="Street address"
+                        value={newCode.address}
+                        onChange={(e) => setNewCode({...newCode, address: e.target.value})}
+                        className="mt-1"
+                        data-testid="input-edit-code-address"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Phone Number (Optional)</Label>
+                      <Input
+                        placeholder="+212 6XX XXX XXX"
+                        value={newCode.phoneNumber}
+                        onChange={(e) => setNewCode({...newCode, phoneNumber: e.target.value})}
+                        className="mt-1"
+                        data-testid="input-edit-code-phone"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  type="button" 
+                  onClick={handleAddCode} 
+                  className="w-full"
+                  data-testid="button-edit-add-code"
+                  disabled={!newCode.code || !newCode.accountHolderName}
+                >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add
+                  Add Service Code
                 </Button>
-              </div>
+              </Card>
             </div>
 
             <DialogFooter>

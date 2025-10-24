@@ -3,10 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { StatCard } from "@/components/StatCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
-import { ClientCard } from "@/components/ClientCard";
-import { Users, CreditCard, Zap, Plus, TrendingUp, Search } from "lucide-react";
+import { SmartSearch } from "@/components/SmartSearch";
+import { Users, CreditCard, Zap, Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -25,7 +24,6 @@ interface Statistics {
 export default function Dashboard() {
   const [, navigate] = useLocation();
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: stats } = useQuery<Statistics>({
@@ -89,13 +87,6 @@ export default function Dashboard() {
     ? Math.round(((stats?.clientsThisMonth || 0) / lastMonthClients) * 100)
     : 0;
 
-  const filteredClients = clients.filter((client: Client) =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.phone.includes(searchQuery) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.codes.some(code => code.code.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -109,41 +100,7 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, email, or code..."
-          className="pl-10"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          data-testid="input-search"
-        />
-      </div>
-
-      {searchQuery && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            Search Results {filteredClients.length > 0 && `(${filteredClients.length})`}
-          </h2>
-          {filteredClients.length === 0 ? (
-            <Card className="p-6 text-center">
-              <p className="text-muted-foreground">No clients found matching your search.</p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredClients.map((client: Client) => (
-                <ClientCard
-                  key={client.id}
-                  client={client}
-                  onClick={() => navigate(`/clients/${client.id}`)}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <SmartSearch clients={clients} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

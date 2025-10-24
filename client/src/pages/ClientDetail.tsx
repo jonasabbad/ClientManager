@@ -138,6 +138,11 @@ export default function ClientDetail() {
             <div class="code-block">
               <div class="service-name">${code.service.replace('-', ' ')}</div>
               <div class="code-value">${code.code}</div>
+              <div style="margin-top: 5px; font-size: 9pt;">
+                <strong>Holder:</strong> ${code.accountHolderName || 'N/A'}
+              </div>
+              ${code.address ? `<div style="font-size: 9pt;"><strong>Address:</strong> ${code.address}</div>` : ''}
+              ${code.phoneNumber ? `<div style="font-size: 9pt;"><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -265,6 +270,11 @@ export default function ClientDetail() {
               <div class="code-card">
                 <div class="service-name">${code.service.replace('-', ' ')}</div>
                 <div class="code-value">${code.code}</div>
+                <div style="margin-top: 10px; font-size: 10pt; color: #555;">
+                  <div><strong>Account Holder:</strong> ${code.accountHolderName || 'N/A'}</div>
+                  ${code.address ? `<div><strong>Address:</strong> ${code.address}</div>` : ''}
+                  ${code.phoneNumber ? `<div><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
+                </div>
               </div>
             `).join('')}
           </div>
@@ -386,8 +396,29 @@ export default function ClientDetail() {
             {client.codes.map((codeItem, index) => (
               <Card key={`${codeItem.service}-${index}`} className="p-4" data-testid={`card-code-${codeItem.service}`}>
                 <ServiceBadge service={codeItem.service as ServiceType} />
-                <div className="mt-3">
+                <div className="mt-3 space-y-3">
                   <CodeDisplay code={codeItem.code} service={codeItem.service} />
+                  
+                  <div className="space-y-2 text-sm border-t pt-3">
+                    <div>
+                      <span className="text-muted-foreground font-medium">Account Holder:</span>
+                      <p className="font-semibold">{codeItem.accountHolderName || 'N/A'}</p>
+                    </div>
+                    
+                    {codeItem.address && (
+                      <div>
+                        <span className="text-muted-foreground font-medium">Address:</span>
+                        <p>{codeItem.address}</p>
+                      </div>
+                    )}
+                    
+                    {codeItem.phoneNumber && (
+                      <div>
+                        <span className="text-muted-foreground font-medium">Phone:</span>
+                        <p>{codeItem.phoneNumber}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}
