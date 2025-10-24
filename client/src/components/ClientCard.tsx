@@ -1,20 +1,23 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Edit, Trash2 } from "lucide-react";
-import { ServiceBadge, ServiceType } from "./ServiceBadge";
-import { CodeDisplay } from "./CodeDisplay";
+import { Mail, Phone, Edit, Trash2, ChevronRight } from "lucide-react";
 import type { Client } from "@shared/schema";
 
 interface ClientCardProps {
   client: Client;
   onEdit?: () => void;
   onDelete?: () => void;
+  onClick?: () => void;
 }
 
-export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
+export function ClientCard({ client, onEdit, onDelete, onClick }: ClientCardProps) {
   return (
-    <Card className="p-6 hover-elevate" data-testid={`card-client-${client.id}`}>
-      <div className="flex items-start justify-between gap-4 mb-4">
+    <Card 
+      className="p-6 hover-elevate cursor-pointer" 
+      data-testid={`card-client-${client.id}`}
+      onClick={onClick}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold mb-1" data-testid={`text-client-name-${client.id}`}>
             {client.name}
@@ -29,12 +32,22 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
               <span data-testid={`text-client-email-${client.id}`}>{client.email}</span>
             </div>
           </div>
+          {client.codes.length > 0 && (
+            <div className="mt-2">
+              <span className="text-sm text-muted-foreground">
+                {client.codes.length} service {client.codes.length === 1 ? 'code' : 'codes'}
+              </span>
+            </div>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-start">
           <Button
             variant="ghost"
             size="icon"
-            onClick={onEdit}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.();
+            }}
             data-testid={`button-edit-client-${client.id}`}
           >
             <Edit className="h-4 w-4" />
@@ -42,25 +55,17 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.();
+            }}
             data-testid={`button-delete-client-${client.id}`}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </div>
       </div>
-
-      {client.codes.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium">Service Codes</p>
-          {client.codes.map((codeItem) => (
-            <div key={codeItem.service} className="space-y-2">
-              <ServiceBadge service={codeItem.service as ServiceType} />
-              <CodeDisplay code={codeItem.code} service={codeItem.service} />
-            </div>
-          ))}
-        </div>
-      )}
     </Card>
   );
 }

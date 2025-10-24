@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { ClientCard } from "@/components/ClientCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Plus, FileDown, Printer } from "lucide-react";
+import { Plus, FileDown, Printer } from "lucide-react";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { EditClientDialog } from "@/components/EditClientDialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -29,10 +29,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Clients() {
+  const [, navigate] = useLocation();
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
@@ -95,12 +95,6 @@ export default function Clients() {
     },
   });
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.phone.includes(searchQuery) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.codes.some(code => code.code.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   const handleExportCSV = () => {
     const headers = ["Name", "Phone", "Email", "Services"];
@@ -131,9 +125,9 @@ export default function Clients() {
     
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
-    doc.text(`Total Clients: ${filteredClients.length}`, 14, 35);
+    doc.text(`Total Clients: ${clients.length}`, 14, 35);
 
-    const tableData = filteredClients.map(client => [
+    const tableData = clients.map((client: Client) => [
       client.name,
       client.phone,
       client.email,
@@ -185,7 +179,7 @@ export default function Clients() {
         }
       `;
 
-    const content = filteredClients.map(client => `
+    const content = clients.map((client: Client) => `
       <div class="client">
         <div class="client-name">${client.name}</div>
         <div>📞 ${client.phone}</div>
@@ -266,33 +260,21 @@ export default function Clients() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, email, or code..."
-          className="pl-10"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          data-testid="input-search"
-        />
-      </div>
-
       {isLoading ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Loading clients...</p>
         </div>
-      ) : filteredClients.length === 0 ? (
+      ) : clients.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            {searchQuery ? "No clients found matching your search." : "No clients yet. Add your first client!"}
-          </p>
+          <p className="text-muted-foreground">No clients yet. Add your first client!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map((client) => (
+          {clients.map((client: Client) => (
             <ClientCard
               key={client.id}
               client={client}
+              onClick={() => navigate(`/clients/${client.id}`)}
               onEdit={() => setEditingClient(client)}
               onDelete={() => setDeletingClientId(client.id)}
             />
