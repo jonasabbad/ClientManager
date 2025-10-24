@@ -1,0 +1,100 @@
+
+Build a smart, modern web app called Customer Management to manage all my clients and their payment/service codes (Inwi, Orange, Maroc Telecom, Water, Gas, Electricity, etc.).
+
+🗄️ Database
+
+Use MySQL hosted on Hostinger as the main database.
+
+Create these main tables:
+
+clients — id, name, phone, email, created_at
+
+services — id, name, color, icon
+
+codes — id, client_id, service_id, code_value, created_at
+
+transactions (optional) — id, client_id, service_id, amount, status, date
+
+Ensure foreign key relations and optimized queries for fast search.
+
+💡 Core Features
+
+Client Management
+
+Add, edit, delete clients easily.
+
+Each client can have multiple codes (Inwi, Orange, etc.).
+
+Codes can be copied, edited, deleted, and new ones added dynamically.
+
+Validation: no duplicate code for the same service.
+
+Smart Search
+
+Search by:
+
+Client name (partial match)
+
+Phone number
+
+Any payment code (unique)
+
+AI-assisted search suggestion (if spelling is close, show: “Did you mean...?”).
+
+Instant results (live filtering).
+
+Printing & Reports
+
+Print client cards or receipts in 80mm thermal format and A4 format.
+
+Print layout includes logo, client name, phone, and all service codes.
+
+Export all clients and codes as PDF, CSV, or Excel.
+
+Dashboard
+
+Overview: total clients, total codes, total services, and last 10 actions.
+
+Show graphs of clients per service (e.g., Inwi = 150 clients).
+
+Quick access to “Most used services” and “Recently added clients.”
+
+UI/UX
+
+Built with React + TailwindCSS + Framer Motion for smooth animations.
+
+Mobile-first responsive design.
+
+Service colors (Inwi → purple, Orange → orange, Maroc Telecom → blue).
+
+Copy code button with toast notification (“Code copied!”).
+
+Clean and fast UI with a dark/light mode toggle.
+
+Backend
+
+Node.js + Express backend.
+
+Secure connection to MySQL (using mysql2 or sequelize).
+
+RESTful APIs for clients, services, and codes.
+
+JWT authentication (optional for admin access).
+
+Smart caching for fast searches.
+
+Smart Additions
+
+Suggest similar clients when adding a new one (prevent duplicates).
+
+Auto-format codes depending on the service type (e.g., Inwi = 10 digits).
+
+Smart logs: record every action (add, edit, delete).
+
+Option to backup database to CSV or Google Drive automatically.
+
+Printing Customization
+
+Choose between 80mm (POS) and A4 layouts.
+
+Each print includes a QR code that leads to the client profile page.
