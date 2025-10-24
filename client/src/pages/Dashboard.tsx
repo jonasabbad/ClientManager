@@ -224,7 +224,7 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/client/${client.id}`)}
+                        onClick={() => navigate(`/clients/${client.id}`)}
                         data-testid={`button-view-${client.id}`}
                       >
                         View
