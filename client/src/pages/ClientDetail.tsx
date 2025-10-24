@@ -244,61 +244,138 @@ export default function ClientDetail() {
       <html>
       <head>
         <title>Print Receipt - ${client.name}</title>
+        <meta charset="UTF-8">
         <style>
           @media print {
             @page { size: 80mm auto; margin: 0; }
+            body { margin: 0; padding: 0; }
           }
+          * { box-sizing: border-box; }
           body {
             width: 80mm;
             margin: 0;
-            padding: 10mm;
+            padding: 8mm 6mm;
             font-family: 'Courier New', monospace;
-            font-size: 10pt;
+            font-size: 9pt;
+            line-height: 1.4;
           }
-          .header { text-align: center; margin-bottom: 15px; border-bottom: 2px dashed #000; padding-bottom: 10px; }
-          .title { font-size: 14pt; font-weight: bold; margin-bottom: 5px; }
-          .section { margin-bottom: 15px; }
-          .label { font-weight: bold; margin-bottom: 3px; }
-          .value { margin-left: 5px; }
-          .code-block { background: #f5f5f5; padding: 5px; margin: 5px 0; border: 1px solid #ddd; }
-          .service-name { font-weight: bold; text-transform: uppercase; }
-          .code-value { font-family: 'Courier New', monospace; word-break: break-all; }
-          .footer { text-align: center; margin-top: 15px; border-top: 2px dashed #000; padding-top: 10px; font-size: 9pt; }
+          .header {
+            text-align: center;
+            margin-bottom: 12px;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 8px;
+          }
+          .title {
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+            letter-spacing: 1px;
+          }
+          .date {
+            font-size: 8pt;
+            color: #555;
+          }
+          .section {
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+          }
+          .info-row {
+            display: flex;
+            margin-bottom: 4px;
+          }
+          .label {
+            font-weight: bold;
+            min-width: 45px;
+          }
+          .value {
+            flex: 1;
+            word-wrap: break-word;
+          }
+          .divider {
+            border-top: 1px dashed #999;
+            margin: 8px 0;
+          }
+          .codes-header {
+            font-weight: bold;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            font-size: 9pt;
+          }
+          .code-item {
+            border: 1px solid #ddd;
+            padding: 6px;
+            margin-bottom: 6px;
+            background: #fafafa;
+            page-break-inside: avoid;
+          }
+          .service-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10pt;
+            margin-bottom: 3px;
+          }
+          .code-value {
+            font-family: 'Courier New', monospace;
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 4px 0;
+            letter-spacing: 0.5px;
+          }
+          .code-detail {
+            font-size: 8pt;
+            margin-top: 4px;
+            line-height: 1.3;
+          }
+          .code-detail strong {
+            display: inline-block;
+            min-width: 50px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 12px;
+            border-top: 2px dashed #000;
+            padding-top: 8px;
+            font-size: 8pt;
+            color: #666;
+          }
         </style>
       </head>
       <body>
         <div class="header">
           <div class="title">CLIENT RECEIPT</div>
-          <div>${new Date().toLocaleDateString()}</div>
+          <div class="date">${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}</div>
         </div>
         
         <div class="section">
-          <div class="label">Client Name:</div>
-          <div class="value">${client.name}</div>
+          <div class="info-row">
+            <span class="label">Client:</span>
+            <span class="value">${client.name}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phone:</span>
+            <span class="value">${client.phone}</span>
+          </div>
         </div>
         
-        <div class="section">
-          <div class="label">Phone:</div>
-          <div class="value">${client.phone}</div>
-        </div>
+        <div class="divider"></div>
         
         <div class="section">
-          <div class="label">Service Codes:</div>
+          <div class="codes-header">Service Codes (${client.codes.length})</div>
           ${client.codes.map(code => `
-            <div class="code-block">
-              <div class="service-name">${code.service.replace('-', ' ')}</div>
+            <div class="code-item">
+              <div class="service-name">${code.service.replace(/-/g, ' ')}</div>
               <div class="code-value">${code.code}</div>
-              <div style="margin-top: 5px; font-size: 9pt;">
-                <strong>Holder:</strong> ${code.accountHolderName || 'N/A'}
+              <div class="code-detail">
+                <div><strong>Holder:</strong> ${code.accountHolderName || 'N/A'}</div>
+                ${code.address ? `<div><strong>Address:</strong> ${code.address}</div>` : ''}
+                ${code.phoneNumber ? `<div><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
               </div>
-              ${code.address ? `<div style="font-size: 9pt;"><strong>Address:</strong> ${code.address}</div>` : ''}
-              ${code.phoneNumber ? `<div style="font-size: 9pt;"><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
             </div>
           `).join('')}
         </div>
         
         <div class="footer">
-          Thank you for your business
+          Thank you for your business!
         </div>
       </body>
       </html>
@@ -322,103 +399,155 @@ export default function ClientDetail() {
       <html>
       <head>
         <title>Print - ${client.name}</title>
+        <meta charset="UTF-8">
         <style>
           @media print {
-            @page { size: A4; margin: 20mm; }
+            @page { size: A4; margin: 15mm; }
+            body { margin: 0; padding: 0; }
           }
+          * { box-sizing: border-box; }
           body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #2c3e50;
+            padding: 10mm;
           }
           .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 3px solid #333;
-          }
-          .title { font-size: 24pt; font-weight: bold; margin-bottom: 10px; }
-          .subtitle { font-size: 12pt; color: #666; }
-          .section {
             margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #2c3e50;
           }
-          .label {
+          .title {
+            font-size: 26pt;
             font-weight: bold;
-            font-size: 11pt;
-            color: #555;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            color: #1a252f;
+            letter-spacing: 0.5px;
           }
-          .value {
-            font-size: 12pt;
-            padding: 10px;
-            background: #f9f9f9;
-            border-left: 4px solid #007bff;
+          .subtitle {
+            font-size: 11pt;
+            color: #7f8c8d;
+          }
+          .info-section {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+          }
+          .info-label {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+          }
+          .info-value {
+            font-size: 13pt;
+            color: #2c3e50;
+            font-weight: 500;
+          }
+          .codes-section {
+            margin-top: 25px;
+          }
+          .codes-title {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
           }
           .codes-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 12px;
           }
           .code-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            background: #fafafa;
+            border: 1.5px solid #d5d8dc;
+            border-radius: 6px;
+            padding: 12px;
+            background: #ffffff;
+            page-break-inside: avoid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           }
-          .service-name {
-            font-weight: bold;
-            font-size: 11pt;
-            color: #007bff;
+          .service-label {
+            font-weight: 600;
+            font-size: 10pt;
+            color: #3498db;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
           }
           .code-value {
             font-family: 'Courier New', monospace;
-            font-size: 10pt;
-            background: white;
-            padding: 8px;
-            border: 1px solid #ddd;
+            font-size: 12pt;
+            background: #ecf0f1;
+            padding: 8px 10px;
             border-radius: 4px;
             word-break: break-all;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 6px 0;
+          }
+          .code-details {
+            margin-top: 8px;
+            font-size: 9pt;
+            color: #5d6d7e;
+            line-height: 1.5;
+          }
+          .code-details div {
+            margin-bottom: 3px;
+          }
+          .code-details strong {
+            font-weight: 600;
+            color: #34495e;
+            display: inline-block;
+            min-width: 80px;
           }
           .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #333;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #ecf0f1;
             text-align: center;
-            font-size: 10pt;
-            color: #666;
+            font-size: 9pt;
+            color: #95a5a6;
+          }
+          .footer p {
+            margin: 3px 0;
           }
         </style>
       </head>
       <body>
         <div class="header">
           <div class="title">Client Information</div>
-          <div class="subtitle">${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+          <div class="subtitle">${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} | ${new Date().toLocaleTimeString()}</div>
         </div>
         
-        <div class="section">
-          <div class="label">Client Name</div>
-          <div class="value">${client.name}</div>
+        <div class="info-section">
+          <div class="info-label">Client Name</div>
+          <div class="info-value">${client.name}</div>
         </div>
         
-        <div class="section">
-          <div class="label">Phone Number</div>
-          <div class="value">${client.phone}</div>
+        <div class="info-section">
+          <div class="info-label">Phone Number</div>
+          <div class="info-value">${client.phone}</div>
         </div>
         
-        <div class="section">
-          <div class="label">Service Codes (${client.codes.length})</div>
+        <div class="codes-section">
+          <div class="codes-title">Service Codes (${client.codes.length})</div>
           <div class="codes-grid">
             ${client.codes.map(code => `
               <div class="code-card">
-                <div class="service-name">${code.service.replace('-', ' ')}</div>
+                <div class="service-label">${code.service.replace(/-/g, ' ')}</div>
                 <div class="code-value">${code.code}</div>
-                <div style="margin-top: 10px; font-size: 10pt; color: #555;">
+                <div class="code-details">
                   <div><strong>Account Holder:</strong> ${code.accountHolderName || 'N/A'}</div>
                   ${code.address ? `<div><strong>Address:</strong> ${code.address}</div>` : ''}
-                  ${code.phoneNumber ? `<div><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
+                  ${code.phoneNumber ? `<div><strong>Contact:</strong> ${code.phoneNumber}</div>` : ''}
                 </div>
               </div>
             `).join('')}
@@ -426,7 +555,7 @@ export default function ClientDetail() {
         </div>
         
         <div class="footer">
-          <p>Customer Management System</p>
+          <p><strong>Customer Management System</strong></p>
           <p>Generated on ${new Date().toLocaleString()}</p>
         </div>
       </body>
