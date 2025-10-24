@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,35 +6,45 @@ import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
 import { ServiceBadge, ServiceType } from "./ServiceBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Client, InsertClient } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertClientSchema } from "@shared/schema";
-import type { InsertClient } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-interface AddClientDialogProps {
+interface EditClientDialogProps {
+  client: Client;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: Partial<InsertClient>) => void;
 }
 
 const availableServices: ServiceType[] = ["inwi", "orange", "maroc-telecom", "water", "gas", "electricity"];
 
-export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialogProps) {
+export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditClientDialogProps) {
   const [selectedService, setSelectedService] = useState<ServiceType>("inwi");
   const [newCode, setNewCode] = useState("");
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
-      name: "",
-      phone: "",
-      email: "",
-      codes: [],
+      name: client.name,
+      phone: client.phone,
+      email: client.email,
+      codes: client.codes.map(c => ({ service: c.service as ServiceType, code: c.code })),
     },
   });
 
   const codes = form.watch("codes") || [];
+
+  useEffect(() => {
+    form.reset({
+      name: client.name,
+      phone: client.phone,
+      email: client.email,
+      codes: client.codes.map(c => ({ service: c.service as ServiceType, code: c.code })),
+    });
+  }, [client, form]);
 
   const handleAddCode = () => {
     if (newCode && !codes.some(c => c.service === selectedService)) {
@@ -49,15 +59,13 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
 
   const handleFormSubmit = (data: InsertClient) => {
     onSubmit?.(data);
-    form.reset();
-    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add New Client</DialogTitle>
+          <DialogTitle>Edit Client</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -73,7 +81,7 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                       <Input
                         placeholder="John Doe"
                         {...field}
-                        data-testid="input-client-name"
+                        data-testid="input-edit-client-name"
                       />
                     </FormControl>
                     <FormMessage />
@@ -91,7 +99,7 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                       <Input
                         placeholder="+212 6XX XXX XXX"
                         {...field}
-                        data-testid="input-client-phone"
+                        data-testid="input-edit-client-phone"
                       />
                     </FormControl>
                     <FormMessage />
@@ -111,7 +119,7 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                       type="email"
                       placeholder="john@example.com"
                       {...field}
-                      data-testid="input-client-email"
+                      data-testid="input-edit-client-email"
                     />
                   </FormControl>
                   <FormMessage />
@@ -126,14 +134,14 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                 <div className="space-y-3">
                   {codes.map((codeItem) => (
                     <div key={codeItem.service} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                      <ServiceBadge service={codeItem.service} />
+                      <ServiceBadge service={codeItem.service as ServiceType} />
                       <code className="flex-1 font-mono text-sm">{codeItem.code}</code>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handleRemoveCode(codeItem.service)}
-                        data-testid={`button-remove-code-${codeItem.service}`}
+                        onClick={() => handleRemoveCode(codeItem.service as ServiceType)}
+                        data-testid={`button-edit-remove-code-${codeItem.service}`}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -144,7 +152,7 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
 
               <div className="flex gap-2">
                 <Select value={selectedService} onValueChange={(value) => setSelectedService(value as ServiceType)}>
-                  <SelectTrigger className="w-48" data-testid="select-service">
+                  <SelectTrigger className="w-48" data-testid="select-edit-service">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -161,10 +169,10 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                   value={newCode}
                   onChange={(e) => setNewCode(e.target.value)}
                   className="flex-1"
-                  data-testid="input-service-code"
+                  data-testid="input-edit-service-code"
                 />
                 
-                <Button onClick={handleAddCode} data-testid="button-add-code">
+                <Button onClick={handleAddCode} data-testid="button-edit-add-code">
                   <Plus className="h-4 w-4 mr-2" />
                   Add
                 </Button>
@@ -175,16 +183,13 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  form.reset();
-                  onOpenChange(false);
-                }}
-                data-testid="button-cancel"
+                onClick={() => onOpenChange(false)}
+                data-testid="button-edit-cancel"
               >
                 Cancel
               </Button>
-              <Button type="submit" data-testid="button-save-client">
-                Save Client
+              <Button type="submit" data-testid="button-save-edit-client">
+                Save Changes
               </Button>
             </DialogFooter>
           </form>

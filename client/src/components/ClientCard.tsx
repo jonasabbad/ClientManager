@@ -3,19 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, Edit, Trash2 } from "lucide-react";
 import { ServiceBadge, ServiceType } from "./ServiceBadge";
 import { CodeDisplay } from "./CodeDisplay";
-
-export interface ClientCode {
-  service: ServiceType;
-  code: string;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  codes: ClientCode[];
-}
+import type { Client } from "@shared/schema";
 
 interface ClientCardProps {
   client: Client;
@@ -67,7 +55,7 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
           <p className="text-sm font-medium">Service Codes</p>
           {client.codes.map((codeItem) => (
             <div key={codeItem.service} className="space-y-2">
-              <ServiceBadge service={codeItem.service} />
+              <ServiceBadge service={codeItem.service as ServiceType} />
               <CodeDisplay code={codeItem.code} service={codeItem.service} />
             </div>
           ))}
