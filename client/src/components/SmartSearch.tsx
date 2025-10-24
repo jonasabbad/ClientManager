@@ -28,6 +28,12 @@ export function SmartSearch({ clients }: SmartSearchProps) {
   const [searchValue, setSearchValue] = useState("");
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
 
+  // Define normalizePhone before useEffect
+  const normalizePhone = (phone: string) => {
+    // Strip all non-digit characters for comparison
+    return phone.replace(/\D/g, '');
+  };
+
   useEffect(() => {
     if (!searchValue) {
       setFilteredClients([]);
@@ -35,16 +41,24 @@ export function SmartSearch({ clients }: SmartSearchProps) {
     }
 
     const query = searchValue.toLowerCase();
+    const normalizedQuery = normalizePhone(query);
+    const hasDigits = /\d/.test(query); // Check if query contains any digits
+    
     const filtered = clients.filter((client: Client) => {
       const nameMatch = client.name.toLowerCase().includes(query);
-      const phoneMatch = client.phone.includes(query);
+      // For phone matching: use raw comparison always, and normalized only if query has digits
+      const phoneMatch = client.phone.includes(query) || 
+        (hasDigits && normalizePhone(client.phone).includes(normalizedQuery));
       const emailMatch = client.email.toLowerCase().includes(query);
       const codeMatch = client.codes.some(code => 
         code.code.toLowerCase().includes(query) ||
         (code.accountHolderName && code.accountHolderName.toLowerCase().includes(query)) ||
         code.service.toLowerCase().includes(query) ||
         (code.address && code.address.toLowerCase().includes(query)) ||
-        (code.phoneNumber && code.phoneNumber.includes(query))
+        (code.phoneNumber && (
+          code.phoneNumber.includes(query) || 
+          (hasDigits && normalizePhone(code.phoneNumber).includes(normalizedQuery))
+        ))
       );
       
       return nameMatch || phoneMatch || emailMatch || codeMatch;
@@ -55,7 +69,7 @@ export function SmartSearch({ clients }: SmartSearchProps) {
 
   const handleSelect = (clientId: number) => {
     setOpen(false);
-    setSearchValue("");
+    // Keep search value so user can see what they searched for
     navigate(`/clients/${clientId}`);
   };
 
@@ -70,9 +84,13 @@ export function SmartSearch({ clients }: SmartSearchProps) {
           data-testid="button-smart-search"
         >
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-          <span className="text-muted-foreground">
-            Search by name, phone, or code...
-          </span>
+          {searchValue ? (
+            <span className="truncate">{searchValue}</span>
+          ) : (
+            <span className="text-muted-foreground">
+              Search by name, phone, or code...
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="start">

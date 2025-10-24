@@ -10,7 +10,7 @@ export const clients = pgTable("clients", {
   codes: jsonb("codes").notNull().$type<{ 
     service: string; 
     code: string;
-    accountHolderName: string;
+    accountHolderName?: string;
     address?: string;
     phoneNumber?: string;
   }[]>(),
