@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, updateClientSchema } from "@shared/schema";
+import { insertClientSchema, updateClientSchema, insertServiceCodeSchema, updateServiceCodeSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -180,6 +180,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching activities:", error);
       res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  // Get all service codes
+  app.get("/api/service-codes", async (req, res) => {
+    try {
+      const serviceCodes = await storage.getAllServiceCodes();
+      res.json(serviceCodes);
+    } catch (error) {
+      console.error("Error fetching service codes:", error);
+      res.status(500).json({ error: "Failed to fetch service codes" });
+    }
+  });
+
+  // Get service code by ID
+  app.get("/api/service-codes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid service code ID" });
+      }
+
+      const serviceCode = await storage.getServiceCode(id);
+      if (!serviceCode) {
+        return res.status(404).json({ error: "Service code not found" });
+      }
+
+      res.json(serviceCode);
+    } catch (error) {
+      console.error("Error fetching service code:", error);
+      res.status(500).json({ error: "Failed to fetch service code" });
+    }
+  });
+
+  // Create service code
+  app.post("/api/service-codes", async (req, res) => {
+    try {
+      const validatedData = insertServiceCodeSchema.parse(req.body);
+      const newServiceCode = await storage.createServiceCode(validatedData);
+      
+      // Log activity
+      await storage.createActivity({
+        clientId: null,
+        action: "service_added",
+        description: `Added new service: ${newServiceCode.name} (${newServiceCode.category})`,
+        clientName: "System",
+      });
+      
+      res.status(201).json(newServiceCode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating service code:", error);
+      res.status(500).json({ error: "Failed to create service code" });
+    }
+  });
+
+  // Update service code
+  app.patch("/api/service-codes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid service code ID" });
+      }
+
+      const existingServiceCode = await storage.getServiceCode(id);
+      if (!existingServiceCode) {
+        return res.status(404).json({ error: "Service code not found" });
+      }
+
+      const validatedData = updateServiceCodeSchema.parse({ ...req.body, id });
+      const { id: _id, ...updateData } = validatedData;
+      
+      const updatedServiceCode = await storage.updateServiceCode(id, updateData);
+      if (!updatedServiceCode) {
+        return res.status(404).json({ error: "Service code not found" });
+      }
+
+      // Log activity
+      await storage.createActivity({
+        clientId: null,
+        action: "service_updated",
+        description: `Updated service: ${updatedServiceCode.name}`,
+        clientName: "System",
+      });
+
+      res.json(updatedServiceCode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error updating service code:", error);
+      res.status(500).json({ error: "Failed to update service code" });
+    }
+  });
+
+  // Delete service code
+  app.delete("/api/service-codes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid service code ID" });
+      }
+
+      const serviceCode = await storage.getServiceCode(id);
+      if (!serviceCode) {
+        return res.status(404).json({ error: "Service code not found" });
+      }
+
+      // Log activity before deletion
+      await storage.createActivity({
+        clientId: null,
+        action: "service_deleted",
+        description: `Deleted service: ${serviceCode.name}`,
+        clientName: "System",
+      });
+
+      const deleted = await storage.deleteServiceCode(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Service code not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting service code:", error);
+      res.status(500).json({ error: "Failed to delete service code" });
     }
   });
 
