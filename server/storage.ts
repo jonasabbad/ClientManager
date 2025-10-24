@@ -42,7 +42,10 @@ export class DatabaseStorage implements IStorage {
           ilike(clients.name, searchPattern),
           ilike(clients.phone, searchPattern),
           ilike(clients.email, searchPattern),
-          sql`${clients.codes}::text ILIKE ${searchPattern}`
+          sql`EXISTS (
+            SELECT 1 FROM jsonb_array_elements(${clients.codes}) AS code_elem
+            WHERE code_elem->>'code' ILIKE ${searchPattern}
+          )`
         )
       )
       .orderBy(sql`${clients.updatedAt} DESC`);

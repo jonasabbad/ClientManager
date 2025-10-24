@@ -99,7 +99,7 @@ export default function Clients() {
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.phone.includes(searchQuery) ||
     client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.codes.some(code => code.code.includes(searchQuery))
+    client.codes.some(code => code.code.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleExportCSV = () => {
