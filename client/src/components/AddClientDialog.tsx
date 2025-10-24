@@ -35,7 +35,6 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
     defaultValues: {
       name: "",
       phone: "",
-      email: "",
       codes: [],
     },
   });
@@ -119,25 +118,6 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="john@example.com"
-                      {...field}
-                      data-testid="input-client-email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="space-y-4">
               <Label>Service Codes</Label>

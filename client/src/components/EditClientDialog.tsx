@@ -36,7 +36,6 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
     defaultValues: {
       name: client.name,
       phone: client.phone,
-      email: client.email,
       codes: client.codes.map(c => ({
         service: c.service as ServiceType,
         code: c.code,
@@ -53,7 +52,6 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
     form.reset({
       name: client.name,
       phone: client.phone,
-      email: client.email,
       codes: client.codes.map(c => ({
         service: c.service as ServiceType,
         code: c.code,
@@ -139,25 +137,6 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="john@example.com"
-                      {...field}
-                      data-testid="input-edit-client-email"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="space-y-4">
               <Label>Service Codes</Label>
