@@ -6,7 +6,6 @@ export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
-  email: text("email").notNull(),
   codes: jsonb("codes").notNull().$type<{ 
     service: string; 
     code: string;
@@ -40,7 +39,6 @@ export const serviceCodes = pgTable("service_codes", {
 export const insertClientSchema = createInsertSchema(clients, {
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
-  email: z.string().email("Invalid email address"),
   codes: z.array(z.object({
     service: z.string().min(1, "Service type is required"),
     code: z.string().min(1, "Code is required"),
