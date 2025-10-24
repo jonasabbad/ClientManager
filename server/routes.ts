@@ -1,13 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { firebaseStorage as storage } from "./firebaseStorage";
+import { initializeFirebase } from "./firebase";
 import { insertClientSchema, updateClientSchema, insertServiceCodeSchema, updateServiceCodeSchema } from "@shared/schema";
 import { z } from "zod";
-// Authentication disabled for Hostinger deployment
+// Authentication disabled for deployment
 // import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware disabled for Hostinger deployment
+  // Initialize Firebase
+  initializeFirebase();
+  
+  // Auth middleware disabled for deployment
   // await setupAuth(app);
 
   // Auth routes disabled for Hostinger deployment
