@@ -34,7 +34,7 @@ export const insertClientSchema = createInsertSchema(clients, {
   codes: z.array(z.object({
     service: z.enum(["inwi", "orange", "maroc-telecom", "water", "gas", "electricity"]),
     code: z.string().min(1, "Code is required"),
-    accountHolderName: z.string().min(1, "Account holder name is required"),
+    accountHolderName: z.string().optional(), // Made optional for backward compatibility
     address: z.string().optional(),
     phoneNumber: z.string().optional(),
   })),
