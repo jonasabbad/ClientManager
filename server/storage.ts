@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { clients, activities, serviceCodes, type Client, type InsertClient, type UpdateClient, type Activity, type InsertActivity, type ServiceCodeConfig, type InsertServiceCode, type UpdateServiceCode } from "@shared/schema";
+import { clients, activities, serviceCodes, users, type Client, type InsertClient, type UpdateClient, type Activity, type InsertActivity, type ServiceCodeConfig, type InsertServiceCode, type UpdateServiceCode, type User, type UpsertUser } from "@shared/schema";
 import { eq, or, ilike, sql, gte, lte, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -25,6 +25,9 @@ export interface IStorage {
   createServiceCode(serviceCode: InsertServiceCode): Promise<ServiceCodeConfig>;
   updateServiceCode(id: number, serviceCode: Partial<UpdateServiceCode>): Promise<ServiceCodeConfig | undefined>;
   deleteServiceCode(id: number): Promise<boolean>;
+  // User operations - Required for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -51,7 +54,6 @@ export class DatabaseStorage implements IStorage {
         or(
           ilike(clients.name, searchPattern),
           ilike(clients.phone, searchPattern),
-          ilike(clients.email, searchPattern),
           sql`EXISTS (
             SELECT 1 FROM jsonb_array_elements(${clients.codes}) AS code_elem
             WHERE code_elem->>'code' ILIKE ${searchPattern}
@@ -174,6 +176,27 @@ export class DatabaseStorage implements IStorage {
   async deleteServiceCode(id: number): Promise<boolean> {
     const result = await db.delete(serviceCodes).where(eq(serviceCodes.id, id)).returning();
     return result.length > 0;
+  }
+
+  // User operations - Required for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
   }
 }
 
