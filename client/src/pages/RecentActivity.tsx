@@ -46,6 +46,12 @@ export default function RecentActivity() {
         return <Badge variant="destructive">Deleted</Badge>;
       case "code_added":
         return <Badge className="bg-purple-500">Code Added</Badge>;
+      case "service_added":
+        return <Badge className="bg-emerald-500">Service Added</Badge>;
+      case "service_updated":
+        return <Badge className="bg-cyan-500">Service Updated</Badge>;
+      case "service_deleted":
+        return <Badge className="bg-rose-500">Service Deleted</Badge>;
       default:
         return <Badge>{action}</Badge>;
     }
