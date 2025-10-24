@@ -3,26 +3,27 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertClientSchema, updateClientSchema, insertServiceCodeSchema, updateServiceCodeSchema } from "@shared/schema";
 import { z } from "zod";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+// Authentication disabled for Hostinger deployment
+// import { setupAuth, isAuthenticated } from "./replitAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware - from blueprint:javascript_log_in_with_replit
-  await setupAuth(app);
+  // Auth middleware disabled for Hostinger deployment
+  // await setupAuth(app);
 
-  // Auth routes - from blueprint:javascript_log_in_with_replit
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth routes disabled for Hostinger deployment
+  // app.get('/api/auth/user', async (req: any, res) => {
+  //   try {
+  //     const userId = req.user.claims.sub;
+  //     const user = await storage.getUser(userId);
+  //     res.json(user);
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //     res.status(500).json({ message: "Failed to fetch user" });
+  //   }
+  // });
 
   // Get all clients
-  app.get("/api/clients", isAuthenticated, async (req, res) => {
+  app.get("/api/clients", async (req, res) => {
     try {
       const clients = await storage.getAllClients();
       res.json(clients);
@@ -33,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get client by ID
-  app.get("/api/clients/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/clients/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -53,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search clients
-  app.get("/api/clients/search/:query", isAuthenticated, async (req, res) => {
+  app.get("/api/clients/search/:query", async (req, res) => {
     try {
       const query = req.params.query;
       const clients = await storage.searchClients(query);
@@ -65,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create client
-  app.post("/api/clients", isAuthenticated, async (req, res) => {
+  app.post("/api/clients", async (req, res) => {
     try {
       const validatedData = insertClientSchema.parse(req.body);
       const newClient = await storage.createClient(validatedData);
@@ -89,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update client
-  app.patch("/api/clients/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/clients/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -136,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete client
-  app.delete("/api/clients/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/clients/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -169,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get statistics
-  app.get("/api/statistics", isAuthenticated, async (req, res) => {
+  app.get("/api/statistics", async (req, res) => {
     try {
       const stats = await storage.getStatistics();
       res.json(stats);
@@ -180,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all activities
-  app.get("/api/activities", isAuthenticated, async (req, res) => {
+  app.get("/api/activities", async (req, res) => {
     try {
       const dateParam = req.query.date;
       let activities;
@@ -200,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all service codes
-  app.get("/api/service-codes", isAuthenticated, async (req, res) => {
+  app.get("/api/service-codes", async (req, res) => {
     try {
       const serviceCodes = await storage.getAllServiceCodes();
       res.json(serviceCodes);
@@ -211,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get service code by ID
-  app.get("/api/service-codes/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/service-codes/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -231,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create service code
-  app.post("/api/service-codes", isAuthenticated, async (req, res) => {
+  app.post("/api/service-codes", async (req, res) => {
     try {
       const validatedData = insertServiceCodeSchema.parse(req.body);
       const newServiceCode = await storage.createServiceCode(validatedData);
@@ -255,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update service code
-  app.patch("/api/service-codes/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/service-codes/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -294,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete service code
-  app.delete("/api/service-codes/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/service-codes/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
