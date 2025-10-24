@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { clients, activities, type Client, type InsertClient, type UpdateClient, type Activity, type InsertActivity } from "@shared/schema";
+import { clients, activities, serviceCodes, type Client, type InsertClient, type UpdateClient, type Activity, type InsertActivity, type ServiceCodeConfig, type InsertServiceCode, type UpdateServiceCode } from "@shared/schema";
 import { eq, or, ilike, sql, gte, lte, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -19,6 +19,12 @@ export interface IStorage {
   getAllActivities(): Promise<Activity[]>;
   getActivitiesByDate(date: Date): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+  // Service Code methods
+  getAllServiceCodes(): Promise<ServiceCodeConfig[]>;
+  getServiceCode(id: number): Promise<ServiceCodeConfig | undefined>;
+  createServiceCode(serviceCode: InsertServiceCode): Promise<ServiceCodeConfig>;
+  updateServiceCode(id: number, serviceCode: Partial<UpdateServiceCode>): Promise<ServiceCodeConfig | undefined>;
+  deleteServiceCode(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -133,6 +139,41 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date(),
     }).returning();
     return result[0];
+  }
+
+  async getAllServiceCodes(): Promise<ServiceCodeConfig[]> {
+    return await db.select().from(serviceCodes).orderBy(serviceCodes.name);
+  }
+
+  async getServiceCode(id: number): Promise<ServiceCodeConfig | undefined> {
+    const result = await db.select().from(serviceCodes).where(eq(serviceCodes.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createServiceCode(serviceCode: InsertServiceCode): Promise<ServiceCodeConfig> {
+    const result = await db.insert(serviceCodes).values({
+      ...serviceCode,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    return result[0];
+  }
+
+  async updateServiceCode(id: number, serviceCodeData: Partial<UpdateServiceCode>): Promise<ServiceCodeConfig | undefined> {
+    const result = await db
+      .update(serviceCodes)
+      .set({
+        ...serviceCodeData,
+        updatedAt: new Date(),
+      })
+      .where(eq(serviceCodes.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteServiceCode(id: number): Promise<boolean> {
+    const result = await db.delete(serviceCodes).where(eq(serviceCodes.id, id)).returning();
+    return result.length > 0;
   }
 }
 
