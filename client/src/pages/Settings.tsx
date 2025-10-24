@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Save, Database, FileText } from "lucide-react";
+import { Settings as SettingsIcon, Save, Database, FileText, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -21,29 +21,73 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const defaultServices = [
-  { id: "inwi", name: "Inwi", category: "telecom", color: "bg-orange-500" },
-  { id: "orange", name: "Orange", category: "telecom", color: "bg-orange-600" },
-  { id: "maroc-telecom", name: "Maroc Telecom", category: "telecom", color: "bg-blue-500" },
-  { id: "water", name: "Water", category: "utility", color: "bg-blue-400" },
-  { id: "gas", name: "Gas", category: "utility", color: "bg-yellow-500" },
-  { id: "electricity", name: "Electricity", category: "utility", color: "bg-amber-500" },
-];
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { ServiceCodeConfig } from "@shared/schema";
 
 export default function Settings() {
   const { toast } = useToast();
-  const [services, setServices] = useState(defaultServices);
   const [newService, setNewService] = useState({
-    id: "",
+    serviceId: "",
     name: "",
     category: "",
-    color: "bg-gray-500",
   });
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Fetch service codes from database
+  const { data: serviceCodes, isLoading } = useQuery<ServiceCodeConfig[]>({
+    queryKey: ["/api/service-codes"],
+  });
+
+  // Add service code mutation
+  const addServiceMutation = useMutation({
+    mutationFn: async (serviceData: { serviceId: string; name: string; category: string }) => {
+      const res = await apiRequest("POST", "/api/service-codes", { ...serviceData, isActive: 1 });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/service-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Service Added",
+        description: "Service has been added successfully",
+      });
+      setNewService({ serviceId: "", name: "", category: "" });
+      setShowAddForm(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete service code mutation
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/service-codes/${id}`, {});
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/service-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Service Deleted",
+        description: "Service has been deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete service",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSaveSettings = () => {
-    // In a real app, this would save to backend/localStorage
     toast({
       title: "Settings Saved",
       description: "Your settings have been saved successfully",
@@ -51,7 +95,7 @@ export default function Settings() {
   };
 
   const handleAddService = () => {
-    if (!newService.id || !newService.name || !newService.category) {
+    if (!newService.serviceId || !newService.name || !newService.category) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -60,13 +104,13 @@ export default function Settings() {
       return;
     }
 
-    setServices([...services, newService]);
-    setNewService({ id: "", name: "", category: "", color: "bg-gray-500" });
-    setShowAddForm(false);
-    toast({
-      title: "Service Added",
-      description: `${newService.name} has been added to available services`,
-    });
+    addServiceMutation.mutate(newService);
+  };
+
+  const handleDeleteService = (id: number) => {
+    if (confirm("Are you sure you want to delete this service?")) {
+      deleteServiceMutation.mutate(id);
+    }
   };
 
   return (
@@ -185,8 +229,8 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <Input
                 placeholder="Service ID (e.g., 'iam')"
-                value={newService.id}
-                onChange={(e) => setNewService({ ...newService, id: e.target.value })}
+                value={newService.serviceId}
+                onChange={(e) => setNewService({ ...newService, serviceId: e.target.value })}
                 data-testid="input-service-id"
               />
               <Input
@@ -208,8 +252,12 @@ export default function Settings() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleAddService} data-testid="button-submit-service">
-                Add Service
+              <Button 
+                onClick={handleAddService} 
+                disabled={addServiceMutation.isPending}
+                data-testid="button-submit-service"
+              >
+                {addServiceMutation.isPending ? "Adding..." : "Add Service"}
               </Button>
             </div>
           </Card>
@@ -222,30 +270,55 @@ export default function Settings() {
               <TableHead>Service Name</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {services.map((service) => (
-              <TableRow key={service.id} data-testid={`row-service-${service.id}`}>
-                <TableCell className="font-mono" data-testid={`text-id-${service.id}`}>
-                  {service.id}
-                </TableCell>
-                <TableCell data-testid={`text-name-${service.id}`}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${service.color}`} />
-                    {service.name}
-                  </div>
-                </TableCell>
-                <TableCell data-testid={`text-category-${service.id}`}>
-                  <Badge variant="outline" className="capitalize">
-                    {service.category}
-                  </Badge>
-                </TableCell>
-                <TableCell data-testid={`text-status-${service.id}`}>
-                  <Badge className="bg-green-500">Active</Badge>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  Loading services...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : serviceCodes && serviceCodes.length > 0 ? (
+              serviceCodes.map((service) => (
+                <TableRow key={service.id} data-testid={`row-service-${service.serviceId}`}>
+                  <TableCell className="font-mono" data-testid={`text-id-${service.serviceId}`}>
+                    {service.serviceId}
+                  </TableCell>
+                  <TableCell data-testid={`text-name-${service.serviceId}`}>
+                    {service.name}
+                  </TableCell>
+                  <TableCell data-testid={`text-category-${service.serviceId}`}>
+                    <Badge variant="outline" className="capitalize">
+                      {service.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell data-testid={`text-status-${service.serviceId}`}>
+                    <Badge className="bg-green-500">
+                      {service.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteService(service.id)}
+                      disabled={deleteServiceMutation.isPending}
+                      data-testid={`button-delete-${service.serviceId}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No services configured. Add your first service above.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>
