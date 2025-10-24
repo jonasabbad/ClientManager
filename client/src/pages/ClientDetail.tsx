@@ -9,7 +9,7 @@ import { EditClientDialog } from "@/components/EditClientDialog";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Client, InsertClient, ServiceCode } from "@shared/schema";
+import type { Client, InsertClient, ServiceCode, ServiceCodeConfig } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +47,7 @@ export default function ClientDetail() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [newCode, setNewCode] = useState<{
     code: string;
-    service: ServiceCode["service"] | "";
+    service: string;
     accountHolderName: string;
     address: string;
     phoneNumber: string;
@@ -69,6 +69,10 @@ export default function ClientDetail() {
       return res.json();
     },
     enabled: !!clientId,
+  });
+
+  const { data: serviceCodes = [] } = useQuery<ServiceCodeConfig[]>({
+    queryKey: ["/api/service-codes"],
   });
 
   const updateMutation = useMutation({
@@ -208,7 +212,7 @@ export default function ClientDetail() {
     const codeToEdit = client.codes[index];
     setNewCode({
       code: codeToEdit.code,
-      service: codeToEdit.service as ServiceCode["service"],
+      service: codeToEdit.service,
       accountHolderName: codeToEdit.accountHolderName || "",
       address: codeToEdit.address || "",
       phoneNumber: codeToEdit.phoneNumber || "",
@@ -563,18 +567,22 @@ export default function ClientDetail() {
               />
               <Select
                 value={newCode.service}
-                onValueChange={(value) => setNewCode({ ...newCode, service: value as ServiceCode["service"] })}
+                onValueChange={(value) => setNewCode({ ...newCode, service: value })}
               >
                 <SelectTrigger data-testid="select-quick-service">
                   <SelectValue placeholder="Service Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="inwi">Inwi</SelectItem>
-                  <SelectItem value="orange">Orange</SelectItem>
-                  <SelectItem value="maroc-telecom">Maroc Telecom</SelectItem>
-                  <SelectItem value="water">Water</SelectItem>
-                  <SelectItem value="gas">Gas</SelectItem>
-                  <SelectItem value="electricity">Electricity</SelectItem>
+                  {serviceCodes
+                    .filter((sc) => sc.isActive === 1)
+                    .map((serviceCode) => (
+                      <SelectItem 
+                        key={serviceCode.serviceId} 
+                        value={serviceCode.serviceId}
+                      >
+                        {serviceCode.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <Input

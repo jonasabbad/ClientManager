@@ -42,7 +42,7 @@ export const insertClientSchema = createInsertSchema(clients, {
   phone: z.string().min(1, "Phone is required"),
   email: z.string().email("Invalid email address"),
   codes: z.array(z.object({
-    service: z.enum(["inwi", "orange", "maroc-telecom", "water", "gas", "electricity"]),
+    service: z.string().min(1, "Service type is required"),
     code: z.string().min(1, "Code is required"),
     accountHolderName: z.string().optional(), // Made optional for backward compatibility
     address: z.string().optional(),
@@ -86,7 +86,7 @@ export type InsertServiceCode = z.infer<typeof insertServiceCodeSchema>;
 export type UpdateServiceCode = z.infer<typeof updateServiceCodeSchema>;
 export type ServiceCodeConfig = typeof serviceCodes.$inferSelect;
 export type ServiceCode = {
-  service: "inwi" | "orange" | "maroc-telecom" | "water" | "gas" | "electricity";
+  service: string;
   code: string;
   accountHolderName?: string;
   address?: string;
