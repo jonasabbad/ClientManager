@@ -42,3 +42,10 @@ export const updateClientSchema = insertClientSchema.partial().extend({
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type UpdateClient = z.infer<typeof updateClientSchema>;
 export type Client = typeof clients.$inferSelect;
+export type ServiceCode = {
+  service: string;
+  code: string;
+  accountHolderName?: string;
+  address?: string;
+  phoneNumber?: string;
+};

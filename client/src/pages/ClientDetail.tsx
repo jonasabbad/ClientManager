@@ -2,14 +2,14 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Edit, Trash2, Printer } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Printer, Plus } from "lucide-react";
 import { ServiceBadge, ServiceType } from "@/components/ServiceBadge";
 import { CodeDisplay } from "@/components/CodeDisplay";
 import { EditClientDialog } from "@/components/EditClientDialog";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Client, InsertClient } from "@shared/schema";
+import type { Client, InsertClient, ServiceCode } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function ClientDetail() {
   const [, params] = useRoute("/clients/:id");
@@ -27,6 +43,14 @@ export default function ClientDetail() {
   const { toast } = useToast();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [newCode, setNewCode] = useState({
+    code: "",
+    service: "",
+    accountHolderName: "",
+    address: "",
+    phoneNumber: "",
+  });
 
   const clientId = params?.id ? parseInt(params.id) : null;
 
@@ -77,6 +101,41 @@ export default function ClientDetail() {
       });
     },
   });
+
+  const addCodeMutation = useMutation({
+    mutationFn: async (codeData: ServiceCode) => {
+      if (!client) throw new Error("No client");
+      const updatedCodes = [...client.codes, codeData];
+      const res = await apiRequest("PATCH", `/api/clients/${client.id}`, { codes: updatedCodes });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Success", description: "Service code added successfully" });
+      setIsQuickAddOpen(false);
+      setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add service code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleQuickAdd = () => {
+    if (!newCode.code || !newCode.service || !newCode.accountHolderName) {
+      toast({
+        title: "Error",
+        description: "Please fill in code, service type, and account holder name",
+        variant: "destructive",
+      });
+      return;
+    }
+    addCodeMutation.mutate(newCode as ServiceCode);
+  };
 
   const handlePrint80mm = () => {
     if (!client) return;
@@ -386,43 +445,124 @@ export default function ClientDetail() {
       </Card>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Service Codes ({client.codes.length})</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Service Codes ({client.codes.length})</h2>
+          <Button
+            onClick={() => setIsQuickAddOpen(!isQuickAddOpen)}
+            size="sm"
+            data-testid="button-toggle-quick-add"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Add Code
+          </Button>
+        </div>
+
+        {isQuickAddOpen && (
+          <Card className="p-4 mb-4">
+            <h3 className="font-semibold mb-3">Add New Service Code</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <Input
+                placeholder="Code"
+                value={newCode.code}
+                onChange={(e) => setNewCode({ ...newCode, code: e.target.value })}
+                data-testid="input-quick-code"
+              />
+              <Select
+                value={newCode.service}
+                onValueChange={(value) => setNewCode({ ...newCode, service: value })}
+              >
+                <SelectTrigger data-testid="select-quick-service">
+                  <SelectValue placeholder="Service Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inwi">Inwi</SelectItem>
+                  <SelectItem value="orange">Orange</SelectItem>
+                  <SelectItem value="maroc-telecom">Maroc Telecom</SelectItem>
+                  <SelectItem value="water">Water</SelectItem>
+                  <SelectItem value="gas">Gas</SelectItem>
+                  <SelectItem value="electricity">Electricity</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Full Name"
+                value={newCode.accountHolderName}
+                onChange={(e) => setNewCode({ ...newCode, accountHolderName: e.target.value })}
+                data-testid="input-quick-holder"
+              />
+              <Input
+                placeholder="Address (optional)"
+                value={newCode.address}
+                onChange={(e) => setNewCode({ ...newCode, address: e.target.value })}
+                data-testid="input-quick-address"
+              />
+              <Input
+                placeholder="Phone (optional)"
+                value={newCode.phoneNumber}
+                onChange={(e) => setNewCode({ ...newCode, phoneNumber: e.target.value })}
+                data-testid="input-quick-phone"
+              />
+            </div>
+            <div className="flex gap-2 mt-3">
+              <Button
+                onClick={handleQuickAdd}
+                disabled={addCodeMutation.isPending}
+                data-testid="button-submit-quick-add"
+              >
+                {addCodeMutation.isPending ? "Adding..." : "Add Code"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsQuickAddOpen(false);
+                  setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+                }}
+                data-testid="button-cancel-quick-add"
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {client.codes.length === 0 ? (
           <Card className="p-6">
             <p className="text-muted-foreground text-center">No service codes added yet</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {client.codes.map((codeItem, index) => (
-              <Card key={`${codeItem.service}-${index}`} className="p-4" data-testid={`card-code-${codeItem.service}`}>
-                <ServiceBadge service={codeItem.service as ServiceType} />
-                <div className="mt-3 space-y-3">
-                  <CodeDisplay code={codeItem.code} service={codeItem.service} />
-                  
-                  <div className="space-y-2 text-sm border-t pt-3">
-                    <div>
-                      <span className="text-muted-foreground font-medium">Account Holder:</span>
-                      <p className="font-semibold">{codeItem.accountHolderName || 'N/A'}</p>
-                    </div>
-                    
-                    {codeItem.address && (
-                      <div>
-                        <span className="text-muted-foreground font-medium">Address:</span>
-                        <p>{codeItem.address}</p>
-                      </div>
-                    )}
-                    
-                    {codeItem.phoneNumber && (
-                      <div>
-                        <span className="text-muted-foreground font-medium">Phone:</span>
-                        <p>{codeItem.phoneNumber}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead>Full Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {client.codes.map((codeItem, index) => (
+                  <TableRow key={`${codeItem.service}-${index}`} data-testid={`row-code-${index}`}>
+                    <TableCell className="font-mono" data-testid={`text-code-${index}`}>
+                      {codeItem.code}
+                    </TableCell>
+                    <TableCell data-testid={`text-service-${index}`}>
+                      <ServiceBadge service={codeItem.service as ServiceType} />
+                    </TableCell>
+                    <TableCell data-testid={`text-address-${index}`}>
+                      {codeItem.address || "No address"}
+                    </TableCell>
+                    <TableCell className="font-medium" data-testid={`text-holder-${index}`}>
+                      {codeItem.accountHolderName || "N/A"}
+                    </TableCell>
+                    <TableCell data-testid={`text-phone-${index}`}>
+                      {codeItem.phoneNumber || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
 
