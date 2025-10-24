@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, Edit, Trash2, ChevronRight } from "lucide-react";
+import { Phone, Edit, Trash2, ChevronRight } from "lucide-react";
 import type { Client } from "@shared/schema";
 
 interface ClientCardProps {
@@ -26,10 +26,6 @@ export function ClientCard({ client, onEdit, onDelete, onClick }: ClientCardProp
             <div className="flex items-center gap-2">
               <Phone className="h-3 w-3" />
               <span data-testid={`text-client-phone-${client.id}`}>{client.phone}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Mail className="h-3 w-3" />
-              <span data-testid={`text-client-email-${client.id}`}>{client.email}</span>
             </div>
           </div>
           {client.codes.length > 0 && (
