@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { StatCard } from "@/components/StatCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { SmartSearch } from "@/components/SmartSearch";
-import { Users, CreditCard, Zap, Plus, TrendingUp, Phone, Mail, Code } from "lucide-react";
+import { Users, CreditCard, Zap, Plus, TrendingUp, Phone, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { Card } from "@/components/ui/card";
@@ -194,7 +194,6 @@ export default function Dashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead className="text-center">Service Codes</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -209,12 +208,6 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3 text-muted-foreground" />
                         {client.phone}
-                      </div>
-                    </TableCell>
-                    <TableCell data-testid={`text-email-${client.id}`}>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        {client.email}
                       </div>
                     </TableCell>
                     <TableCell className="text-center" data-testid={`text-codes-${client.id}`}>

@@ -97,11 +97,10 @@ export default function Clients() {
 
 
   const handleExportCSV = () => {
-    const headers = ["Name", "Phone", "Email", "Services"];
+    const headers = ["Name", "Phone", "Services"];
     const rows = clients.map(client => [
       client.name,
       client.phone,
-      client.email,
       client.codes.map(c => `${c.service}: ${c.code}`).join("; "),
     ]);
 
@@ -130,21 +129,19 @@ export default function Clients() {
     const tableData = clients.map((client: Client) => [
       client.name,
       client.phone,
-      client.email,
       client.codes.map(c => `${c.service}: ${c.code}`).join("\n"),
     ]);
 
     autoTable(doc, {
       startY: 45,
-      head: [["Name", "Phone", "Email", "Service Codes"]],
+      head: [["Name", "Phone", "Service Codes"]],
       body: tableData,
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [52, 73, 94], textColor: 255 },
       columnStyles: {
-        0: { cellWidth: 40 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 60 },
+        0: { cellWidth: 50 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 90 },
       },
       margin: { top: 45, left: 14, right: 14 },
     });
@@ -183,7 +180,6 @@ export default function Clients() {
       <div class="client">
         <div class="client-name">${client.name}</div>
         <div>📞 ${client.phone}</div>
-        <div>✉️ ${client.email}</div>
         ${client.codes.map(code => `
           <div class="code-item">${code.service}: ${code.code}</div>
         `).join("")}

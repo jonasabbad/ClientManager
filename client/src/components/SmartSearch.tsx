@@ -49,7 +49,6 @@ export function SmartSearch({ clients }: SmartSearchProps) {
       // For phone matching: use raw comparison always, and normalized only if query has digits
       const phoneMatch = client.phone.includes(query) || 
         (hasDigits && normalizePhone(client.phone).includes(normalizedQuery));
-      const emailMatch = client.email.toLowerCase().includes(query);
       const codeMatch = client.codes.some(code => 
         code.code.toLowerCase().includes(query) ||
         (code.accountHolderName && code.accountHolderName.toLowerCase().includes(query)) ||
@@ -61,7 +60,7 @@ export function SmartSearch({ clients }: SmartSearchProps) {
         ))
       );
       
-      return nameMatch || phoneMatch || emailMatch || codeMatch;
+      return nameMatch || phoneMatch || codeMatch;
     });
 
     setFilteredClients(filtered.slice(0, 10)); // Limit to 10 results

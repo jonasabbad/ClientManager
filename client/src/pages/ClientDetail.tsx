@@ -283,11 +283,6 @@ export default function ClientDetail() {
         </div>
         
         <div class="section">
-          <div class="label">Email:</div>
-          <div class="value">${client.email}</div>
-        </div>
-        
-        <div class="section">
           <div class="label">Service Codes:</div>
           ${client.codes.map(code => `
             <div class="code-block">
@@ -414,11 +409,6 @@ export default function ClientDetail() {
         </div>
         
         <div class="section">
-          <div class="label">Email Address</div>
-          <div class="value">${client.email}</div>
-        </div>
-        
-        <div class="section">
           <div class="label">Service Codes (${client.codes.length})</div>
           <div class="codes-grid">
             ${client.codes.map(code => `
@@ -531,11 +521,6 @@ export default function ClientDetail() {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Phone Number</h3>
             <p className="text-lg" data-testid="text-client-phone">{client.phone}</p>
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Email Address</h3>
-            <p className="text-lg" data-testid="text-client-email">{client.email}</p>
           </div>
         </div>
       </Card>
