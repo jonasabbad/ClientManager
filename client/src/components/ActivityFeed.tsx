@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { UserPlus, Edit, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { UserPlus, Edit, Trash2, ArrowRight } from "lucide-react";
 
 interface Activity {
   id: string;
@@ -10,6 +11,7 @@ interface Activity {
 
 interface ActivityFeedProps {
   activities: Activity[];
+  onViewAll?: () => void;
 }
 
 const activityConfig = {
@@ -18,10 +20,23 @@ const activityConfig = {
   delete: { icon: Trash2, color: "text-destructive", label: "Deleted client" },
 };
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
+export function ActivityFeed({ activities, onViewAll }: ActivityFeedProps) {
   return (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Recent Activity</h3>
+        {onViewAll && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onViewAll}
+            data-testid="button-view-all-activity"
+          >
+            View All
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        )}
+      </div>
       <div className="space-y-4">
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">

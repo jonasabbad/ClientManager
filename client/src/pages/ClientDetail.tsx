@@ -44,6 +44,7 @@ export default function ClientDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [newCode, setNewCode] = useState<{
     code: string;
     service: ServiceCode["service"] | "";
@@ -131,6 +132,51 @@ export default function ClientDetail() {
     },
   });
 
+  const editCodeMutation = useMutation({
+    mutationFn: async ({ index, codeData }: { index: number; codeData: ServiceCode }) => {
+      if (!client) throw new Error("No client");
+      const updatedCodes = [...client.codes];
+      updatedCodes[index] = codeData;
+      const res = await apiRequest("PATCH", `/api/clients/${client.id}`, { codes: updatedCodes });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Success", description: "Service code updated successfully" });
+      setEditingIndex(null);
+      setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update service code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCodeMutation = useMutation({
+    mutationFn: async (index: number) => {
+      if (!client) throw new Error("No client");
+      const updatedCodes = client.codes.filter((_, i) => i !== index);
+      const res = await apiRequest("PATCH", `/api/clients/${client.id}`, { codes: updatedCodes });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      toast({ title: "Success", description: "Service code deleted successfully" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete service code",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleQuickAdd = () => {
     if (!newCode.code || !newCode.service || !newCode.accountHolderName) {
       toast({
@@ -150,7 +196,37 @@ export default function ClientDetail() {
       phoneNumber: newCode.phoneNumber.trim() || undefined,
     };
     
-    addCodeMutation.mutate(normalizedCode);
+    if (editingIndex !== null) {
+      editCodeMutation.mutate({ index: editingIndex, codeData: normalizedCode });
+    } else {
+      addCodeMutation.mutate(normalizedCode);
+    }
+  };
+
+  const handleStartEdit = (index: number) => {
+    if (!client) return;
+    const codeToEdit = client.codes[index];
+    setNewCode({
+      code: codeToEdit.code,
+      service: codeToEdit.service as ServiceCode["service"],
+      accountHolderName: codeToEdit.accountHolderName || "",
+      address: codeToEdit.address || "",
+      phoneNumber: codeToEdit.phoneNumber || "",
+    });
+    setEditingIndex(index);
+    setIsQuickAddOpen(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsQuickAddOpen(false);
+    setEditingIndex(null);
+    setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+  };
+
+  const handleDeleteCode = (index: number) => {
+    if (window.confirm("Are you sure you want to delete this service code?")) {
+      deleteCodeMutation.mutate(index);
+    }
   };
 
   const handlePrint80mm = () => {
@@ -475,7 +551,9 @@ export default function ClientDetail() {
 
         {isQuickAddOpen && (
           <Card className="p-4 mb-4">
-            <h3 className="font-semibold mb-3">Add New Service Code</h3>
+            <h3 className="font-semibold mb-3">
+              {editingIndex !== null ? "Edit Service Code" : "Add New Service Code"}
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <Input
                 placeholder="Code"
@@ -521,17 +599,17 @@ export default function ClientDetail() {
             <div className="flex gap-2 mt-3">
               <Button
                 onClick={handleQuickAdd}
-                disabled={addCodeMutation.isPending}
+                disabled={addCodeMutation.isPending || editCodeMutation.isPending}
                 data-testid="button-submit-quick-add"
               >
-                {addCodeMutation.isPending ? "Adding..." : "Add Code"}
+                {editingIndex !== null
+                  ? editCodeMutation.isPending ? "Updating..." : "Update Code"
+                  : addCodeMutation.isPending ? "Adding..." : "Add Code"
+                }
               </Button>
               <Button
                 variant="outline"
-                onClick={() => {
-                  setIsQuickAddOpen(false);
-                  setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
-                }}
+                onClick={handleCancelEdit}
                 data-testid="button-cancel-quick-add"
               >
                 Cancel
@@ -554,6 +632,7 @@ export default function ClientDetail() {
                   <TableHead>Address</TableHead>
                   <TableHead>Full Name</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead className="w-[120px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -573,6 +652,26 @@ export default function ClientDetail() {
                     </TableCell>
                     <TableCell data-testid={`text-phone-${index}`}>
                       {codeItem.phoneNumber || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStartEdit(index)}
+                          data-testid={`button-edit-code-${index}`}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteCode(index)}
+                          data-testid={`button-delete-code-${index}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

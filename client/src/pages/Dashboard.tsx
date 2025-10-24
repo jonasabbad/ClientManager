@@ -165,7 +165,10 @@ export default function Dashboard() {
           )}
         </Card>
 
-        <ActivityFeed activities={recentActivities} />
+        <ActivityFeed 
+          activities={recentActivities} 
+          onViewAll={() => navigate("/activity")}
+        />
       </div>
 
       {/* Client List */}
