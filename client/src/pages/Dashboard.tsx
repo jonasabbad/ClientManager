@@ -4,11 +4,20 @@ import { useLocation } from "wouter";
 import { StatCard } from "@/components/StatCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { SmartSearch } from "@/components/SmartSearch";
-import { Users, CreditCard, Zap, Plus, TrendingUp } from "lucide-react";
+import { Users, CreditCard, Zap, Plus, TrendingUp, Phone, Mail, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Client, InsertClient } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -30,7 +39,7 @@ export default function Dashboard() {
     queryKey: ["/api/statistics"],
   });
 
-  const { data: clients = [] } = useQuery<Client[]>({
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
 
@@ -158,6 +167,81 @@ export default function Dashboard() {
 
         <ActivityFeed activities={recentActivities} />
       </div>
+
+      {/* Client List */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">All Clients</h3>
+            {!isLoadingClients && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {clients.length} {clients.length === 1 ? 'client' : 'clients'} registered
+              </p>
+            )}
+          </div>
+        </div>
+        {isLoadingClients ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>Loading clients...</p>
+          </div>
+        ) : clients.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-center">Service Codes</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clients.map((client) => (
+                  <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                    <TableCell className="font-medium" data-testid={`text-name-${client.id}`}>
+                      {client.name}
+                    </TableCell>
+                    <TableCell data-testid={`text-phone-${client.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        {client.phone}
+                      </div>
+                    </TableCell>
+                    <TableCell data-testid={`text-email-${client.id}`}>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        {client.email}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center" data-testid={`text-codes-${client.id}`}>
+                      <Badge variant="outline" className="font-semibold">
+                        <Code className="h-3 w-3 mr-1" />
+                        {client.codes.length}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/client/${client.id}`)}
+                        data-testid={`button-view-${client.id}`}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No clients yet. Add your first client to get started.</p>
+          </div>
+        )}
+      </Card>
 
       <AddClientDialog
         open={isAddClientOpen}

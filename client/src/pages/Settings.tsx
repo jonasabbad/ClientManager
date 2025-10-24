@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Save, Database, FileText, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, Save, Database, FileText, Trash2, Edit } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -33,6 +33,12 @@ export default function Settings() {
     category: "",
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceCodeConfig | null>(null);
+  const [editData, setEditData] = useState({
+    serviceId: "",
+    name: "",
+    category: "",
+  });
 
   // Fetch service codes from database
   const { data: serviceCodes, isLoading } = useQuery<ServiceCodeConfig[]>({
@@ -59,6 +65,31 @@ export default function Settings() {
       toast({
         title: "Error",
         description: "Failed to add service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update service code mutation
+  const updateServiceMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { serviceId: string; name: string; category: string } }) => {
+      const res = await apiRequest("PATCH", `/api/service-codes/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/service-codes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      toast({
+        title: "Service Updated",
+        description: "Service has been updated successfully",
+      });
+      setEditingService(null);
+      setEditData({ serviceId: "", name: "", category: "" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update service",
         variant: "destructive",
       });
     },
@@ -105,6 +136,36 @@ export default function Settings() {
     }
 
     addServiceMutation.mutate(newService);
+  };
+
+  const handleEditService = (service: ServiceCodeConfig) => {
+    setEditingService(service);
+    setEditData({
+      serviceId: service.serviceId,
+      name: service.name,
+      category: service.category,
+    });
+    setShowAddForm(false);
+  };
+
+  const handleUpdateService = () => {
+    if (!editData.serviceId || !editData.name || !editData.category) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editingService) {
+      updateServiceMutation.mutate({ id: editingService.id, data: editData });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingService(null);
+    setEditData({ serviceId: "", name: "", category: "" });
   };
 
   const handleDeleteService = (id: number) => {
@@ -263,6 +324,51 @@ export default function Settings() {
           </Card>
         )}
 
+        {editingService && (
+          <Card className="p-4 mb-4 bg-blue-50 dark:bg-blue-950">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Edit Service</h3>
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit} data-testid="button-cancel-edit">
+                Cancel
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <Input
+                placeholder="Service ID"
+                value={editData.serviceId}
+                onChange={(e) => setEditData({ ...editData, serviceId: e.target.value })}
+                data-testid="input-edit-service-id"
+              />
+              <Input
+                placeholder="Service Name"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                data-testid="input-edit-service-name"
+              />
+              <Select
+                value={editData.category}
+                onValueChange={(value) => setEditData({ ...editData, category: value })}
+              >
+                <SelectTrigger data-testid="select-edit-service-category">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="telecom">Telecom</SelectItem>
+                  <SelectItem value="utility">Utility</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleUpdateService} 
+                disabled={updateServiceMutation.isPending}
+                data-testid="button-update-service"
+              >
+                {updateServiceMutation.isPending ? "Updating..." : "Update Service"}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -300,15 +406,26 @@ export default function Settings() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteService(service.id)}
-                      disabled={deleteServiceMutation.isPending}
-                      data-testid={`button-delete-${service.serviceId}`}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditService(service)}
+                        disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
+                        data-testid={`button-edit-${service.serviceId}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteService(service.id)}
+                        disabled={deleteServiceMutation.isPending || updateServiceMutation.isPending}
+                        data-testid={`button-delete-${service.serviceId}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
