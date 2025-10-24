@@ -68,38 +68,53 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage
 
 **Database:**
-- PostgreSQL (configured for Neon serverless)
-- Drizzle ORM for type-safe database queries
-- Connection pooling via @neondatabase/serverless
-- WebSocket support for serverless environments
+- Firebase Firestore (NoSQL cloud database)
+- Firebase Admin SDK for server-side operations
+- Real-time updates and offline support
+- Serverless and globally distributed
 
-**Schema Design:**
-- **Clients Table:**
-  - `id` (serial, primary key)
-  - `name` (text, required)
-  - `phone` (text, required)
-  - `email` (text, required)
-  - `codes` (jsonb array of service/code objects)
+**Collections:**
+- **Clients Collection:**
+  - `id` (string, document ID)
+  - `name` (string, required)
+  - `phone` (string, required)
+  - `codes` (array of service/code objects)
+  - `createdAt` (timestamp)
+  - `updatedAt` (timestamp)
+
+- **Activities Collection:**
+  - `id` (string, document ID)
+  - `type` (string: created, updated, deleted)
+  - `clientId` (number)
+  - `clientName` (string)
+  - `description` (string)
+  - `createdAt` (timestamp)
+
+- **Service Codes Collection:**
+  - `id` (string, document ID)
+  - `serviceType` (string)
+  - `displayName` (string)
+  - `isActive` (number: 0 or 1)
   - `createdAt` (timestamp)
   - `updatedAt` (timestamp)
 
 **Data Access Pattern:**
-- Repository pattern via DatabaseStorage class
-- Search functionality using PostgreSQL ILIKE for fuzzy matching
-- Searches across name, phone, email, and code values
-- Statistics aggregation for dashboard metrics
+- Repository pattern via FirebaseStorage class
+- Search functionality filters in-memory (Firestore limitation)
+- Searches across name, phone, and code values
+- Statistics aggregation using Firestore queries
 
-**Migration Strategy:**
-- Drizzle Kit for schema migrations
-- Migrations stored in `/migrations` directory
+**Deployment Strategy:**
+- Configured for Vercel serverless deployment
+- Firebase credentials via environment variable
 - Schema defined in `shared/schema.ts` for type sharing
 
 ### External Dependencies
 
 **Core Libraries:**
 - **@tanstack/react-query** - Server state management and caching
-- **drizzle-orm** & **drizzle-zod** - Type-safe ORM with validation
-- **@neondatabase/serverless** - Serverless PostgreSQL client
+- **firebase-admin** - Firebase Admin SDK for Firestore operations
+- **drizzle-zod** - Schema validation (retained for Zod schemas)
 - **react-hook-form** - Form state management
 - **zod** - Schema validation
 - **jspdf** & **jspdf-autotable** - PDF generation for printing
@@ -121,7 +136,8 @@ Preferred communication style: Simple, everyday language.
 **Font Delivery:**
 - Google Fonts CDN for Inter and JetBrains Mono fonts
 
-**Database Hosting:**
-- Designed for Neon (serverless PostgreSQL)
-- Environment variable `DATABASE_URL` required
-- WebSocket connection support for serverless compatibility
+**Deployment:**
+- Designed for Vercel serverless hosting
+- Firebase Firestore for database
+- Environment variable `FIREBASE_SERVICE_ACCOUNT` required
+- No authentication system (disabled for flexible deployment)
