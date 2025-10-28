@@ -3,14 +3,14 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Router } from "wouter";
 
 export default function AppSidebarExample() {
-  const style = {
+  const style: CSSProperties = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
 
   return (
     <Router>
-      <SidebarProvider style={style as React.CSSProperties}>
+      <SidebarProvider style={style}>
         <div className="flex h-screen w-full">
           <AppSidebar />
           <div className="flex-1 p-6">
