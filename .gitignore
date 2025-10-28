@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Attached assets and credentials
+attached_assets/
+*.json
+*service-account*.txt
+*firebase*.json
+*credentials*.txt
