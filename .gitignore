@@ -11,3 +11,8 @@ attached_assets/
 *service-account*.txt
 *firebase*.json
 *credentials*.txt
+
+# Allow essential project manifests
+!package.json
+!package-lock.json
+!tsconfig.json
