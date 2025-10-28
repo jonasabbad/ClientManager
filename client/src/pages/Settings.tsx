@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings as SettingsIcon, Save, Database, FileText, Trash2, Edit, RefreshCw, CheckCircle, XCircle, Upload, Download } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import type { ChangeEvent } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
