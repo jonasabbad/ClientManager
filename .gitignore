@@ -16,3 +16,4 @@ attached_assets/
 !package.json
 !package-lock.json
 !tsconfig.json
+!vercel.json
