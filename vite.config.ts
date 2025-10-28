@@ -12,11 +12,22 @@ export default defineConfig(async ({ mode }) => {
     plugins.push(runtimeErrorOverlay());
 
     if (process.env.REPL_ID !== undefined) {
-      const [{ cartographer }, { devBanner }] = await Promise.all([
-        import("@replit/vite-plugin-cartographer"),
-        import("@replit/vite-plugin-dev-banner"),
-      ]);
-      plugins.push(cartographer(), devBanner());
+      const { cartographer } = await import("@replit/vite-plugin-cartographer");
+      plugins.push(cartographer());
+
+      try {
+        const { devBanner } = await import("@replit/vite-plugin-dev-banner");
+        plugins.push(devBanner());
+      } catch (error) {
+        const moduleNotFound =
+          error instanceof Error &&
+          "code" in error &&
+          (error as NodeJS.ErrnoException).code === "ERR_MODULE_NOT_FOUND";
+
+        if (!moduleNotFound) {
+          throw error;
+        }
+      }
     }
   }
 
