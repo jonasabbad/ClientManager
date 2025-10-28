@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ function Router() {
 }
 
 function App() {
-  const style = {
+  const sidebarStyle: CSSProperties = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
@@ -44,7 +45,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
+          <SidebarProvider style={sidebarStyle}>
             <div className="flex h-screen w-full">
               <AppSidebar />
               <div className="flex flex-col flex-1 overflow-hidden">
