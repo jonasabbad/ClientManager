@@ -1,9 +1,9 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig(async ({ mode }) => {
-  const plugins = [react()];
+const plugins: PluginOption[] = [react()];
 
   if (mode !== "production") {
     const { default: runtimeErrorOverlay } = await import(
