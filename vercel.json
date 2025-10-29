@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-replit-url.replit.app/api/:path*"
+      "destination": "https://your-backend-url.replit.app/api/:path*"
     },
     {
       "source": "/(.*)",
