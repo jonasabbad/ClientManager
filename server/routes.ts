@@ -2,29 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { firebaseStorage as storage } from "./firebaseStorage";
 import { initializeFirebase, getDb } from "./firebase";
+import { authenticateFirebase } from "./firebaseAuth";
 import { insertClientSchema, updateClientSchema, insertServiceCodeSchema, updateServiceCodeSchema } from "@shared/schema";
 import { z } from "zod";
-// Authentication disabled for deployment
-// import { setupAuth, isAuthenticated } from "./replitAuth";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Firebase
   initializeFirebase();
-  
-  // Auth middleware disabled for deployment
-  // await setupAuth(app);
 
-  // Auth routes disabled for Hostinger deployment
-  // app.get('/api/auth/user', async (req: any, res) => {
-  //   try {
-  //     const userId = req.user.claims.sub;
-  //     const user = await storage.getUser(userId);
-  //     res.json(user);
-  //   } catch (error) {
-  //     console.error("Error fetching user:", error);
-  //     res.status(500).json({ message: "Failed to fetch user" });
-  //   }
-  // });
+  app.use("/api", authenticateFirebase);
 
   // Get all clients
   app.get("/api/clients", async (req, res) => {
@@ -49,6 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!client) {
         return res.status(404).json({ error: "Client not found" });
       }
+
 
       res.json(client);
     } catch (error) {
