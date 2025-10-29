@@ -2,9 +2,8 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Edit, Trash2, Printer, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Printer, Plus, Copy } from "lucide-react";
 import { ServiceBadge, ServiceType } from "@/components/ServiceBadge";
-import { CodeDisplay } from "@/components/CodeDisplay";
 import { EditClientDialog } from "@/components/EditClientDialog";
 import { useState } from "react";
 import { queryClient } from "@/lib/queryClient";
@@ -37,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export default function ClientDetail() {
   const [, params] = useRoute("/clients/:id");
@@ -51,16 +51,16 @@ export default function ClientDetail() {
     service: string;
     accountHolderName: string;
     address: string;
-    phoneNumber: string;
+    
   }>({
     code: "",
     service: "",
     accountHolderName: "",
     address: "",
-    phoneNumber: "",
+    
   });
-
-  const clientId = params?.id ? parseInt(params.id) : null;
+  const [movedCodes, setMovedCodes] = useState<Set<string>>(() => new Set());
+  const clientId = params?.id? parseInt(params.id) : null;
 
   const { data: client, isLoading } = useQuery<FirestoreClient>({
     queryKey: ["clients", clientId],
@@ -125,7 +125,7 @@ export default function ClientDetail() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast({ title: "Success", description: "Service code added successfully" });
       setIsQuickAddOpen(false);
-      setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+      setNewCode({ code: "", service: "", accountHolderName: "", address: "" });
     },
     onError: () => {
       toast({
@@ -148,7 +148,7 @@ export default function ClientDetail() {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       toast({ title: "Success", description: "Service code updated successfully" });
       setEditingIndex(null);
-      setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+      setNewCode({ code: "", service: "", accountHolderName: "", address: "" });
     },
     onError: () => {
       toast({
@@ -183,12 +183,10 @@ export default function ClientDetail() {
     const trimmedCode = newCode.code.trim();
     const trimmedAccountHolder = newCode.accountHolderName.trim();
     const trimmedAddress = newCode.address.trim();
-    const trimmedPhone = newCode.phoneNumber.trim();
-
-    if (!trimmedCode || !newCode.service || !trimmedAccountHolder) {
+    if (!trimmedCode || !newCode.service) {
       toast({
         title: "Error",
-        description: "Please fill in code, service type, and account holder name",
+        description: "Please fill in code and service type",
         variant: "destructive",
       });
       return;
@@ -198,15 +196,15 @@ export default function ClientDetail() {
     const normalizedCode: ServiceCode = {
       code: trimmedCode,
       service: newCode.service,
-      accountHolderName: trimmedAccountHolder,
+      
     };
+
+   if (trimmedAccountHolder) {
+      normalizedCode.accountHolderName = trimmedAccountHolder;
+    }
 
     if (trimmedAddress) {
       normalizedCode.address = trimmedAddress;
-    }
-
-    if (trimmedPhone) {
-      normalizedCode.phoneNumber = trimmedPhone;
     }
 
     if (editingIndex !== null) {
@@ -224,7 +222,7 @@ export default function ClientDetail() {
       service: codeToEdit.service,
       accountHolderName: codeToEdit.accountHolderName || "",
       address: codeToEdit.address || "",
-      phoneNumber: codeToEdit.phoneNumber || "",
+      
     });
     setEditingIndex(index);
     setIsQuickAddOpen(true);
@@ -233,7 +231,29 @@ export default function ClientDetail() {
   const handleCancelEdit = () => {
     setIsQuickAddOpen(false);
     setEditingIndex(null);
-    setNewCode({ code: "", service: "", accountHolderName: "", address: "", phoneNumber: "" });
+    setNewCode({ code: "", service: "", accountHolderName: "", address: "" });
+  };
+
+  const handleCopyCode = async (codeValue: string, serviceValue: string, index: number) => {
+    const key = `${serviceValue}-${codeValue}-${index}`;
+    try {
+      await navigator.clipboard.writeText(codeValue);
+      setMovedCodes((prev) => {
+        const updated = new Set(prev);
+        updated.add(key);
+        return updated;
+      });
+      toast({
+        title: "Code copied!",
+        description: "Service code has been copied to clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy code",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteCode = (index: number) => {
@@ -376,8 +396,8 @@ export default function ClientDetail() {
               <div class="code-value">${code.code}</div>
               <div class="code-detail">
                 <div><strong>Holder:</strong> ${code.accountHolderName || 'N/A'}</div>
-                ${code.address ? `<div><strong>Address:</strong> ${code.address}</div>` : ''}
-                ${code.phoneNumber ? `<div><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
+                ${code.address? `<div><strong>Address:</strong> ${code.address}</div>` : ''}
+                ${code.phoneNumber? `<div><strong>Phone:</strong> ${code.phoneNumber}</div>` : ''}
               </div>
             </div>
           `).join('')}
@@ -709,7 +729,7 @@ export default function ClientDetail() {
                 </SelectContent>
               </Select>
               <Input
-                placeholder="Full Name"
+                placeholder="Full Name (optional)"
                 value={newCode.accountHolderName}
                 onChange={(e) => setNewCode({ ...newCode, accountHolderName: e.target.value })}
                 data-testid="input-quick-holder"
@@ -720,12 +740,7 @@ export default function ClientDetail() {
                 onChange={(e) => setNewCode({ ...newCode, address: e.target.value })}
                 data-testid="input-quick-address"
               />
-              <Input
-                placeholder="Phone (optional)"
-                value={newCode.phoneNumber}
-                onChange={(e) => setNewCode({ ...newCode, phoneNumber: e.target.value })}
-                data-testid="input-quick-phone"
-              />
+
             </div>
             <div className="flex gap-2 mt-3">
               <Button
@@ -768,8 +783,25 @@ export default function ClientDetail() {
               <TableBody>
                 {client.codes.map((codeItem, index) => (
                   <TableRow key={`${codeItem.service}-${index}`} data-testid={`row-code-${index}`}>
-                    <TableCell className="font-mono" data-testid={`text-code-${index}`}>
-                      {codeItem.code}
+                    <TableCell data-testid={`text-code-${index}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{codeItem.code}</span>
+                        {movedCodes.has(`${codeItem.service}-${codeItem.code}-${index}`) && (
+                          <Badge variant="secondary" className="border-amber-200 bg-amber-100 text-amber-800">
+                            Moved
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleCopyCode(codeItem.code, codeItem.service, index)}
+                          data-testid={`button-copy-code-${index}`}
+                          aria-label="Copy code"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell data-testid={`text-service-${index}`}>
                       <ServiceBadge service={codeItem.service as ServiceType} />
