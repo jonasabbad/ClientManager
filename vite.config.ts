@@ -46,6 +46,7 @@ const plugins: PluginOption[] = [react()];
       emptyOutDir: true,
     },
     server: {
+      host: "localhost",
       fs: {
         strict: true,
         deny: ["**/.*"],
