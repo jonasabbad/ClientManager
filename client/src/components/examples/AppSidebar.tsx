@@ -1,12 +1,13 @@
 import { AppSidebar } from "../app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Router } from "wouter";
+import type { CSSProperties } from "react";
 
 export default function AppSidebarExample() {
-  const style: CSSProperties = {
+  const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
-  };
+    } as CSSProperties;
 
   return (
     <Router>
