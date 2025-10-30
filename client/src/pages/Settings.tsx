@@ -1,3 +1,20 @@
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Settings as SettingsIcon,
+  Save,
+  Database,
+  FileText,
+  Trash2,
+  Edit,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Upload,
+  Download,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +39,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ServiceCodeConfig } from "@shared/schema";
 import { firebaseConfig } from "@/lib/firebase";
 import { firestoreService } from "@/lib/firestoreService";
+import { cn } from "@/lib/utils";
 
 const FALLBACK_SERVICE_COLOR = "#64748b";
 
@@ -124,6 +142,58 @@ function getReadableTextColor(hex: string): string {
   return luminance > 0.6 ? "#0f172a" : "#f8fafc";
 }
 
+type ServiceColorAccentProps = {
+  text: string;
+  placeholder: string;
+  colorSource?: string;
+  variant?: "solid" | "subtle";
+  className?: string;
+  labelClassName?: string;
+};
+
+function ServiceColorAccent({
+  text,
+  placeholder,
+  colorSource,
+  variant = "subtle",
+  className,
+  labelClassName,
+}: ServiceColorAccentProps) {
+  const displayText = text?.trim() ? text : placeholder;
+  const color = getServiceColor(colorSource ?? text ?? placeholder);
+  const circleStyle = {
+    backgroundColor: color,
+    borderColor: hexToRgba(color, 0.6),
+  } as const;
+  const pillStyle =
+    variant === "solid"
+      ? {
+          backgroundColor: color,
+          color: getReadableTextColor(color),
+        }
+      : {
+          backgroundColor: hexToRgba(color, 0.16),
+          borderColor: hexToRgba(color, 0.45),
+          color,
+        };
+
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <span className="h-2.5 w-2.5 rounded-full border" style={circleStyle} aria-hidden />
+      <span
+        className={cn(
+          "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium",
+          variant === "subtle" && "border",
+          labelClassName,
+        )}
+        style={pillStyle}
+      >
+        {displayText}
+      </span>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { toast } = useToast();
   const [newService, setNewService] = useState({
@@ -144,11 +214,6 @@ export default function Settings() {
     details?: any;
   }>({ status: null, message: '' });
 
-  const newServiceIdColor = getServiceColor(newService.serviceId || newService.name);
-  const newServiceNameColor = getServiceColor(newService.name || newService.serviceId);
-  const editServiceIdColor = getServiceColor(editData.serviceId || editingService?.serviceId);
-  const editServiceNameColor = getServiceColor(editData.name || editingService?.name);
-  
   // Settings form state
   const [companyName, setCompanyName] = useState('Customer Management System');
   const [defaultCountryCode, setDefaultCountryCode] = useState('+212');
@@ -157,23 +222,32 @@ export default function Settings() {
   // File input ref for import
   const importFileRef = useRef<HTMLInputElement>(null);
 
-  // CSV Helper functions for proper quote/escape handling (RFC 4180 compliant)
-  const escapeCsvField = (field: string | number): string => {
-    const str = String(field);
-    // If field contains comma, quote, or newline, wrap in quotes and escape internal quotes
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  };
-
   // Parse entire CSV text into rows, handling quoted newlines properly (RFC 4180 compliant)
   const parseCsvText = (text: string): string[][] => {
     const rows: string[][] = [];
     let currentRow: string[] = [];
     let currentField = '';
     let insideQuotes = false;
-    </Card>
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+      
+      if (char === '"') {
+        if (insideQuotes && nextChar === '"') {
+          // Escaped quote
+          currentField += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          insideQuotes = !insideQuotes;
+        }
+      } else if (char === ',' && !insideQuotes) {
+        // End of field - preserve whitespace as per RFC 4180
+        currentRow.push(currentField);
+        currentField = '';
+      } else if (char === '\n' && !insideQuotes) {
+        </Card>
       </div>
 
       {/* Service Codes Management */}
@@ -205,25 +279,13 @@ export default function Settings() {
                   onChange={(e) => setNewService({ ...newService, serviceId: e.target.value })}
                   data-testid="input-service-id"
                 />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full border"
-                    style={{
-                      backgroundColor: newServiceIdColor,
-                      borderColor: hexToRgba(newServiceIdColor, 0.6),
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    className="inline-flex items-center rounded px-2 py-0.5 font-medium"
-                    style={{
-                      backgroundColor: newServiceIdColor,
-                      color: getReadableTextColor(newServiceIdColor),
-                    }}
-                  >
-                    {newService.serviceId || 'Service ID'}
-                  </span>
-                </div>
+                <ServiceColorAccent
+                  text={newService.serviceId}
+                  placeholder="Service ID"
+                  colorSource={newService.serviceId || newService.name}
+                  variant="solid"
+                  className="text-xs text-muted-foreground"
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <Input
@@ -232,25 +294,13 @@ export default function Settings() {
                   onChange={(e) => setNewService({ ...newService, name: e.target.value })}
                   data-testid="input-service-name"
                 />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full border"
-                    style={{
-                      backgroundColor: newServiceNameColor,
-                      borderColor: hexToRgba(newServiceNameColor, 0.6),
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    className="inline-flex items-center rounded px-2 py-0.5 font-medium"
-                    style={{
-                      backgroundColor: newServiceNameColor,
-                      color: getReadableTextColor(newServiceNameColor),
-                    }}
-                  >
-                    {newService.name || 'Service Name'}
-                  </span>
-                </div>
+                <ServiceColorAccent
+                  text={newService.name}
+                  placeholder="Service Name"
+                  colorSource={newService.name || newService.serviceId}
+                  variant="solid"
+                  className="text-xs text-muted-foreground"
+                />
               </div>
               <Select
                 value={newService.category}
@@ -292,25 +342,13 @@ export default function Settings() {
                   onChange={(e) => setEditData({ ...editData, serviceId: e.target.value })}
                   data-testid="input-edit-service-id"
                 />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full border"
-                    style={{
-                      backgroundColor: editServiceIdColor,
-                      borderColor: hexToRgba(editServiceIdColor, 0.6),
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    className="inline-flex items-center rounded px-2 py-0.5 font-medium"
-                    style={{
-                      backgroundColor: editServiceIdColor,
-                      color: getReadableTextColor(editServiceIdColor),
-                    }}
-                  >
-                    {editData.serviceId || editingService?.serviceId || 'Service ID'}
-                  </span>
-                </div>
+                <ServiceColorAccent
+                  text={editData.serviceId || editingService?.serviceId || ""}
+                  placeholder="Service ID"
+                  colorSource={editData.serviceId || editingService?.serviceId || editingService?.name || ""}
+                  variant="solid"
+                  className="text-xs text-muted-foreground"
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <Input
@@ -319,25 +357,13 @@ export default function Settings() {
                   onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                   data-testid="input-edit-service-name"
                 />
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full border"
-                    style={{
-                      backgroundColor: editServiceNameColor,
-                      borderColor: hexToRgba(editServiceNameColor, 0.6),
-                    }}
-                    aria-hidden
-                  />
-                  <span
-                    className="inline-flex items-center rounded px-2 py-0.5 font-medium"
-                    style={{
-                      backgroundColor: editServiceNameColor,
-                      color: getReadableTextColor(editServiceNameColor),
-                    }}
-                  >
-                    {editData.name || editingService?.name || 'Service Name'}
-                  </span>
-                </div>
+                <ServiceColorAccent
+                  text={editData.name || editingService?.name || ""}
+                  placeholder="Service Name"
+                  colorSource={editData.name || editingService?.name || editingService?.serviceId || ""}
+                  variant="solid"
+                  className="text-xs text-muted-foreground"
+                />
               </div>
               <Select
                 value={editData.category}
@@ -380,56 +406,27 @@ export default function Settings() {
               </TableRow>
             ) : serviceCodes && serviceCodes.length > 0 ? (
               serviceCodes.map((service) => {
-                const serviceIdColor = getServiceColor(service.serviceId);
-                const serviceNameColor = getServiceColor(service.name);
                 return (
                   <TableRow key={service.id} data-testid={`row-service-${service.serviceId}`}>
                     <TableCell className="font-mono" data-testid={`text-id-${service.serviceId}`}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full border"
-                          style={{
-                            backgroundColor: serviceIdColor,
-                            borderColor: hexToRgba(serviceIdColor, 0.6),
-                          }}
-                          aria-hidden
-                        />
-                        <span
-                          className="inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium"
-                          style={{
-                            backgroundColor: hexToRgba(serviceIdColor, 0.18),
-                            borderColor: hexToRgba(serviceIdColor, 0.45),
-                          }}
-                        >
-                          {service.serviceId}
-                        </span>
-                      </div>
+                      <ServiceColorAccent
+                        text={service.serviceId}
+                        placeholder="Service ID"
+                        colorSource={service.serviceId}
+                        labelClassName="font-mono"
+                      />
                     </TableCell>
                     <TableCell data-testid={`text-name-${service.serviceId}`}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full border"
-                          style={{
-                            backgroundColor: serviceNameColor,
-                            borderColor: hexToRgba(serviceNameColor, 0.6),
-                          }}
-                          aria-hidden
-                        />
-                        <span
-                          className="inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium"
-                          style={{
-                            backgroundColor: hexToRgba(serviceNameColor, 0.18),
-                            borderColor: hexToRgba(serviceNameColor, 0.45),
-                          }}
-                        >
-                          {service.name}
-                        </span>
-                      </div>
+                      <ServiceColorAccent
+                        text={service.name}
+                        placeholder="Service Name"
+                        colorSource={service.name}
+                      />
                     </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
                         size="icon"
                         onClick={() => handleEditService(service)}
                         disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
