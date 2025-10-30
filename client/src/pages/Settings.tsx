@@ -33,14 +33,14 @@ export default function Settings() {
   const [newService, setNewService] = useState({
     serviceId: "",
     name: "",
-    category: "",
+    color: "#3b82f6",
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingService, setEditingService] = useState<ServiceCodeConfig | null>(null);
   const [editData, setEditData] = useState({
     serviceId: "",
     name: "",
-    category: "",
+    color: "#3b82f6",
   });
   const [firebaseTestResult, setFirebaseTestResult] = useState<{
     status: 'success' | 'error' | null;
@@ -158,7 +158,7 @@ export default function Settings() {
 
   // Add service code mutation
   const addServiceMutation = useMutation({
-    mutationFn: async (serviceData: { serviceId: string; name: string; category: string }) => {
+    mutationFn: async (serviceData: { serviceId: string; name: string; color: string }) => {
       return await firestoreService.createServiceCode({ ...serviceData, isActive: 1 });
     },
     onSuccess: () => {
@@ -167,7 +167,7 @@ export default function Settings() {
         title: "Service Added",
         description: "Service has been added successfully",
       });
-      setNewService({ serviceId: "", name: "", category: "" });
+      setNewService({ serviceId: "", name: "", color: "#3b82f6" });
       setShowAddForm(false);
     },
     onError: () => {
@@ -181,7 +181,7 @@ export default function Settings() {
 
   // Update service code mutation
   const updateServiceMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { serviceId: string; name: string; category: string } }) => {
+    mutationFn: async ({ id, data }: { id: number; data: { serviceId: string; name: string; color: string } }) => {
       return await firestoreService.updateServiceCode(id, data);
     },
     onSuccess: () => {
@@ -191,7 +191,7 @@ export default function Settings() {
         description: "Service has been updated successfully",
       });
       setEditingService(null);
-      setEditData({ serviceId: "", name: "", category: "" });
+      setEditData({ serviceId: "", name: "", color: "#3b82f6" });
     },
     onError: () => {
       toast({
@@ -287,7 +287,7 @@ export default function Settings() {
   };
 
   const handleAddService = () => {
-    if (!newService.serviceId || !newService.name || !newService.category) {
+    if (!newService.serviceId || !newService.name || !newService.color) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -304,13 +304,13 @@ export default function Settings() {
     setEditData({
       serviceId: service.serviceId,
       name: service.name,
-      category: service.category,
+      color: service.color || "#3b82f6",
     });
     setShowAddForm(false);
   };
 
   const handleUpdateService = () => {
-    if (!editData.serviceId || !editData.name || !editData.category) {
+    if (!editData.serviceId || !editData.name || !editData.color) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -326,7 +326,7 @@ export default function Settings() {
 
   const handleCancelEdit = () => {
     setEditingService(null);
-    setEditData({ serviceId: "", name: "", category: "" });
+    setEditData({ serviceId: "", name: "", color: "#3b82f6" });
   };
 
   // Database backup - export all clients to JSON
@@ -790,19 +790,21 @@ export default function Settings() {
                 onChange={(e) => setNewService({ ...newService, name: e.target.value })}
                 data-testid="input-service-name"
               />
-              <Select
-                value={newService.category}
-                onValueChange={(value) => setNewService({ ...newService, category: value })}
-              >
-                <SelectTrigger data-testid="select-service-category">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="telecom">Telecom</SelectItem>
-                  <SelectItem value="utility">Utility</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Input
+                  type="color"
+                  value={newService.color}
+                  onChange={(e) => setNewService({ ...newService, color: e.target.value })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                  data-testid="input-service-color"
+                />
+                <Input
+                  placeholder="#3b82f6"
+                  value={newService.color}
+                  onChange={(e) => setNewService({ ...newService, color: e.target.value })}
+                  data-testid="input-service-color-text"
+                />
+              </div>
               <Button 
                 onClick={handleAddService} 
                 disabled={addServiceMutation.isPending}
@@ -829,27 +831,29 @@ export default function Settings() {
                 onChange={(e) => setEditData({ ...editData, serviceId: e.target.value })}
                 data-testid="input-edit-service-id"
               />
-              <Input
+                            <Input
                 placeholder="Service Name"
                 value={editData.name}
                 onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                 data-testid="input-edit-service-name"
               />
-              <Select
-                value={editData.category}
-                onValueChange={(value) => setEditData({ ...editData, category: value })}
-              >
-                <SelectTrigger data-testid="select-edit-service-category">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="telecom">Telecom</SelectItem>
-                  <SelectItem value="utility">Utility</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                onClick={handleUpdateService} 
+              <div className="flex gap-2">
+                <Input
+                  type="color"
+                  value={editData.color}
+                  onChange={(e) => setEditData({ ...editData, color: e.target.value })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                  data-testid="input-edit-service-color"
+                />
+                <Input
+                  placeholder="#3b82f6"
+                  value={editData.color}
+                  onChange={(e) => setEditData({ ...editData, color: e.target.value })}
+                  data-testid="input-edit-service-color-text"
+                />
+              </div>
+              <Button
+                onClick={handleUpdateService}
                 disabled={updateServiceMutation.isPending}
                 data-testid="button-update-service"
               >
@@ -859,75 +863,74 @@ export default function Settings() {
           </Card>
         )}
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Service ID</TableHead>
-              <TableHead>Service Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        {/* Service Codes Table */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Loading services...
-                </TableCell>
+                <TableHead>Service ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Color</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : serviceCodes && serviceCodes.length > 0 ? (
-              serviceCodes.map((service) => (
-                <TableRow key={service.id} data-testid={`row-service-${service.serviceId}`}>
-                  <TableCell className="font-mono" data-testid={`text-id-${service.serviceId}`}>
-                    {service.serviceId}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6">
+                    Loading services...
                   </TableCell>
-                  <TableCell data-testid={`text-name-${service.serviceId}`}>
-                    {service.name}
-                  </TableCell>
-                  <TableCell data-testid={`text-category-${service.serviceId}`}>
-                    <Badge variant="outline" className="capitalize">
-                      {service.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell data-testid={`text-status-${service.serviceId}`}>
-                    <Badge className="bg-green-500">
-                      {service.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
+                </TableRow>
+              ) : serviceCodes && serviceCodes.length > 0 ? (
+                serviceCodes.map((service) => (
+                  <TableRow key={service.id}>
+                    <TableCell>{service.serviceId}</TableCell>
+                    <TableCell>{service.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded-full border"
+                          style={{ backgroundColor: service.color }}
+                        />
+                        <span>{service.color}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={service.isActive ? "default" : "secondary"}>
+                        {service.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleEditService(service)}
-                        disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
-                        data-testid={`button-edit-${service.serviceId}`}
+                        data-testid={`button-edit-${service.id}`}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleDeleteService(service.id)}
-                        disabled={deleteServiceMutation.isPending || updateServiceMutation.isPending}
-                        data-testid={`button-delete-${service.serviceId}`}
+                        data-testid={`button-delete-${service.id}`}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
-                    </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                    No services found. Add a new one to get started.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No services configured. Add your first service above.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
     </div>
   );
