@@ -135,7 +135,7 @@ export default function ClientDetail() {
       });
     },
   });
-
+  const displayPhone = client?.phone && client.phone.trim().length > 0 ? client.phone : "N/A";
   const editCodeMutation = useMutation({
     mutationFn: async ({ index, codeData }: { index: number; codeData: ServiceCode }) => {
       if (!client) throw new Error("No client");
@@ -382,7 +382,7 @@ export default function ClientDetail() {
           </div>
           <div class="info-row">
             <span class="label">Phone:</span>
-            <span class="value">${client.phone}</span>
+            <span class="value">${displayPhone}</span>
           </div>
         </div>
         
@@ -563,7 +563,7 @@ export default function ClientDetail() {
         
         <div class="info-section">
           <div class="info-label">Phone Number</div>
-          <div class="info-value">${client.phone}</div>
+          <div class="info-value">${displayPhone}</div>
         </div>
         
         <div class="codes-section">
@@ -678,7 +678,7 @@ export default function ClientDetail() {
           
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Phone Number</h3>
-            <p className="text-lg" data-testid="text-client-phone">{client.phone}</p>
+            <p className="text-lg" data-testid="text-client-phone">{displayPhone}</p>
           </div>
         </div>
       </Card>
