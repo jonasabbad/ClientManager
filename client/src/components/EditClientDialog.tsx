@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ServiceBadge, ServiceType } from "./ServiceBadge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Client, InsertClient, ServiceCodeConfig } from "@shared/schema";
+import type { InsertClient, ServiceCodeConfig } from "@shared/schema";
 import type { FirestoreClient } from "@/lib/firestoreService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,26 +28,17 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
     queryFn: () => firestoreService.getAllServiceCodes(),
   });
 
-  const availableServices = serviceCodes.filter(sc => sc.isActive === 1);
-  const [selectedService, setSelectedService] = useState<string>(availableServices[0]?.serviceId || "");
-  const [newCode, setNewCode] = useState({
-    code: "",
-    accountHolderName: "",
-    address: "",
-    phoneNumber: "",
-  });
-
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
       name: client.name,
-      phone: client.phone,
+      phone: client.phone ?? "",
       codes: client.codes.map(c => ({
         service: c.service as ServiceType,
         code: c.code,
         accountHolderName: c.accountHolderName || "",
-        address: c.address,
-        phoneNumber: c.phoneNumber,
+        address: c.address || "",
+        phoneNumber: c.phoneNumber || "",
       })),
     },
   });
@@ -58,44 +48,40 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
   useEffect(() => {
     form.reset({
       name: client.name,
-      phone: client.phone,
+      phone: client.phone ?? "",
       codes: client.codes.map(c => ({
         service: c.service as ServiceType,
         code: c.code,
         accountHolderName: c.accountHolderName || "",
-        address: c.address,
-        phoneNumber: c.phoneNumber,
+        address: c.address || "",
+        phoneNumber: c.phoneNumber || "",
       })),
     });
   }, [client, form]);
-
-  const handleAddCode = () => {
-    if (newCode.code && newCode.accountHolderName && !codes.some(c => c.service === selectedService)) {
-      form.setValue("codes", [
-        ...codes,
-        {
-          service: selectedService,
-          code: newCode.code,
-          accountHolderName: newCode.accountHolderName,
-          address: newCode.address || undefined,
-          phoneNumber: newCode.phoneNumber || undefined,
-        }
-      ]);
-      setNewCode({
-        code: "",
-        accountHolderName: "",
-        address: "",
-        phoneNumber: "",
-      });
-    }
-  };
 
   const handleRemoveCode = (service: string) => {
     form.setValue("codes", codes.filter(c => c.service !== service));
   };
 
   const handleFormSubmit = (data: InsertClient) => {
-    onSubmit?.(data);
+    const sanitizedName = data.name.trim();
+    const sanitizedPhone = data.phone?.trim();
+    const sanitizedCodes = data.codes.map(code => ({
+      ...code,
+      code: code.code.trim(),
+      accountHolderName: code.accountHolderName?.trim() || undefined,
+      address: code.address?.trim() || undefined,
+      phoneNumber: code.phoneNumber?.trim() || undefined,
+    }));
+
+    const payload: Partial<InsertClient> = {
+      ...data,
+      name: sanitizedName,
+      phone: sanitizedPhone ? sanitizedPhone : undefined,
+      codes: sanitizedCodes,
+    };
+
+    onSubmit?.(payload);
   };
 
   return (
@@ -104,7 +90,7 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
         <DialogHeader>
           <DialogTitle>Edit Client</DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -125,13 +111,13 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Phone Number (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="+212 6XX XXX XXX"
@@ -147,27 +133,19 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
 
             <div className="space-y-4">
               <Label>Service Codes</Label>
-            
-              {codes.length > 0 && (
+
+              {codes.length > 0 ? (
                 <div className="space-y-3">
-                  {codes.map((codeItem) => (
-                    <Card key={codeItem.service} className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <ServiceBadge service={codeItem.service as ServiceType} />
-                            <code className="font-mono text-sm font-medium">{codeItem.code}</code>
-                          </div>
-                          <div className="text-sm space-y-1">
-                            <div><span className="text-muted-foreground">Account Holder:</span> {codeItem.accountHolderName}</div>
-                            {codeItem.address && (
-                              <div><span className="text-muted-foreground">Address:</span> {codeItem.address}</div>
-                            )}
-                            {codeItem.phoneNumber && (
-                              <div><span className="text-muted-foreground">Phone:</span> {codeItem.phoneNumber}</div>
-                            )}
-                          </div>
+                  {codes.map((codeItem, index) => (
+                    <Card key={`${codeItem.service}-${index}`} className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ServiceBadge service={codeItem.service as ServiceType} />
+                          <span className="text-sm text-muted-foreground">
+                            {serviceCodes.find(sc => sc.serviceId === codeItem.service)?.name || codeItem.service}
+                          </span>
                         </div>
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -178,89 +156,90 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <FormField
+                          control={form.control}
+                          name={`codes.${index}.code` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Service Code *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Enter code"
+                                  {...field}
+                                  data-testid={`input-edit-service-code-${codeItem.service}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`codes.${index}.accountHolderName` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Account Holder Name *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Full name"
+                                  {...field}
+                                  data-testid={`input-edit-account-holder-name-${codeItem.service}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <FormField
+                          control={form.control}
+                          name={`codes.${index}.address` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Address (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Street address"
+                                  {...field}
+                                  data-testid={`input-edit-code-address-${codeItem.service}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`codes.${index}.phoneNumber` as const}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="+212 6XX XXX XXX"
+                                  {...field}
+                                  data-testid={`input-edit-code-phone-${codeItem.service}`}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </Card>
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No service codes available for this client.
+                </p>
               )}
-
-              <Card className="p-4 space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <Label>Service Type</Label>
-                    <Select value={selectedService} onValueChange={(value) => setSelectedService(value)}>
-                      <SelectTrigger className="w-full mt-1" data-testid="select-edit-service">
-                        <SelectValue placeholder="Select service type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableServices.map((service) => (
-                          <SelectItem key={service.serviceId} value={service.serviceId}>
-                            {service.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Service Code *</Label>
-                      <Input
-                        placeholder="Enter code"
-                        value={newCode.code}
-                        onChange={(e) => setNewCode({...newCode, code: e.target.value})}
-                        className="mt-1"
-                        data-testid="input-edit-service-code"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Account Holder Name *</Label>
-                      <Input
-                        placeholder="Full name"
-                        value={newCode.accountHolderName}
-                        onChange={(e) => setNewCode({...newCode, accountHolderName: e.target.value})}
-                        className="mt-1"
-                        data-testid="input-edit-account-holder-name"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Address (Optional)</Label>
-                      <Input
-                        placeholder="Street address"
-                        value={newCode.address}
-                        onChange={(e) => setNewCode({...newCode, address: e.target.value})}
-                        className="mt-1"
-                        data-testid="input-edit-code-address"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Phone Number (Optional)</Label>
-                      <Input
-                        placeholder="+212 6XX XXX XXX"
-                        value={newCode.phoneNumber}
-                        onChange={(e) => setNewCode({...newCode, phoneNumber: e.target.value})}
-                        className="mt-1"
-                        data-testid="input-edit-code-phone"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Button 
-                  type="button" 
-                  onClick={handleAddCode} 
-                  className="w-full"
-                  data-testid="button-edit-add-code"
-                  disabled={!newCode.code || !newCode.accountHolderName}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Service Code
-                </Button>
-              </Card>
             </div>
 
             <DialogFooter>
@@ -272,6 +251,7 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
               >
                 Cancel
               </Button>
+
               <Button type="submit" data-testid="button-save-edit-client">
                 Save Changes
               </Button>
