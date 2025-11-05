@@ -30,9 +30,9 @@ export function SmartSearch({ clients }: SmartSearchProps) {
   const [filteredClients, setFilteredClients] = useState<FirestoreClient[]>([]);
 
   // Define normalizePhone before useEffect
-  const normalizePhone = (phone: string) => {
+  const normalizePhone = (phone: string | undefined) => {
     // Strip all non-digit characters for comparison
-    return phone.replace(/\D/g, '');
+    return phone ? phone.replace(/\D/g, '') : '';
   };
 
   useEffect(() => {
@@ -48,8 +48,10 @@ export function SmartSearch({ clients }: SmartSearchProps) {
     const filtered = clients.filter((client: FirestoreClient) => {
       const nameMatch = client.name.toLowerCase().includes(query);
       // For phone matching: use raw comparison always, and normalized only if query has digits
-      const phoneMatch = client.phone.includes(query) || 
-        (hasDigits && normalizePhone(client.phone).includes(normalizedQuery));
+      cconst phoneMatch = client.phone ? (
+        client.phone.toLowerCase().includes(query) ||
+        (hasDigits && normalizePhone(client.phone).includes(normalizedQuery))
+      ) : false;
       const codeMatch = client.codes.some(code => 
         code.code.toLowerCase().includes(query) ||
         (code.accountHolderName && code.accountHolderName.toLowerCase().includes(query)) ||
@@ -118,7 +120,7 @@ export function SmartSearch({ clients }: SmartSearchProps) {
                     <div className="flex flex-col gap-1 flex-1">
                       <div className="font-medium">{client.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {client.phone}
+                        {client.phone && client.phone.trim().length > 0 ? client.phone : "No phone provided"}
                       </div>
                       {client.codes.length > 0 && (
                         <div className="text-xs text-muted-foreground">
