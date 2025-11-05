@@ -12,6 +12,7 @@ import {
   orderBy,
   limit,
   Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import type { Client, ServiceCodeConfig, Activity, InsertActivity } from '@shared/schema';
 
@@ -19,7 +20,7 @@ import type { Client, ServiceCodeConfig, Activity, InsertActivity } from '@share
 export type FirestoreClient = {
   id: number;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   address?: string;
   codes: Array<{
@@ -47,19 +48,32 @@ export const firestoreService = {
     return querySnapshot.docs[0].data() as FirestoreClient;
   },
 
-  async createClient(data: { name: string; phone: string; email?: string; address?: string; codes: any[] }): Promise<FirestoreClient> {
+  async createClient(data: { name: string; phone?: string; email?: string; address?: string; codes: any[] }): Promise<FirestoreClient> {
     // Get the next ID
     const clientsSnapshot = await getDocs(
       query(collection(db, 'clients'), orderBy('id', 'desc'), limit(1))
     );
     const nextId = clientsSnapshot.empty ? 1 : (clientsSnapshot.docs[0].data().id + 1);
-
+    const sanitizedName = data.name.trim();
+    const sanitizedPhone = data.phone?.trim();
     const clientData: FirestoreClient = {
       ...data,
+      name: sanitizedName,
       id: nextId,
       createdAt: new Date().toISOString(),
-      codes: data.codes || [],
+      codes: (data.codes || []).map((code) => ({
+        ...code,
+        accountHolderName: code.accountHolderName?.trim() || undefined,
+        address: code.address?.trim() || undefined,
+        phoneNumber: code.phoneNumber?.trim() || undefined,
+        code: typeof code.code === "string" ? code.code.trim() : code.code,
+      })),
     };
+    if (sanitizedPhone) {
+      clientData.phone = sanitizedPhone;
+    } else {
+      delete (clientData as Partial<FirestoreClient>).phone;
+    }
 
     await addDoc(collection(db, 'clients'), clientData);
 
@@ -82,12 +96,39 @@ export const firestoreService = {
 
     const docRef = querySnapshot.docs[0].ref;
     const existingData = querySnapshot.docs[0].data() as FirestoreClient;
-    const updatedData = {
+    const sanitizedPhone = data.phone?.trim();
+    const sanitizedCodes = data.codes?.map((code) => ({
+      ...code,
+      accountHolderName: code.accountHolderName?.trim() || undefined,
+      address: code.address?.trim() || undefined,
+      phoneNumber: code.phoneNumber?.trim() || undefined,
+      code: typeof code.code === "string" ? code.code.trim() : code.code,
+    }));
+
+    const updatedData: Record<string, any> = {
       ...data,
+      codes: sanitizedCodes ?? data.codes,
       updatedAt: new Date().toISOString(),
     };
+    if (updatedData.codes === undefined) {
+      delete updatedData.codes;
+    }
+
+    if (data.phone !== undefined) {
+      if (sanitizedPhone) {
+        updatedData.phone = sanitizedPhone;
+      } else {
+        updatedData.phone = deleteField();
+      }
+    }
+
+    if (data.phone === undefined && updatedData.phone === undefined) {
+      delete updatedData.phone;
+    }
 
     await updateDoc(docRef, updatedData);
+    const refreshedSnapshot = await getDoc(docRef);
+    const refreshedData = refreshedSnapshot.data() as FirestoreClient | undefined;
 
     // Create activity log - use existing client name if name not in update
     const clientName = data.name || existingData.name;
@@ -98,8 +139,13 @@ export const firestoreService = {
       description: `Updated client ${clientName}`,
       createdAt: new Date().toISOString(),
     });
+    
 
-    return { ...querySnapshot.docs[0].data(), ...updatedData, id } as FirestoreClient;
+    if (!refreshedData) {
+      return null;
+    }
+
+    return { ...refreshedData, id } as FirestoreClient;
   },
 
   async deleteClient(id: number): Promise<boolean> {
