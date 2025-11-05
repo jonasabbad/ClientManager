@@ -53,7 +53,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         or(
           ilike(clients.name, searchPattern),
-          ilike(clients.phone, searchPattern),
+          sql`coalesce(${clients.phone}, '') ILIKE ${searchPattern}`,
           sql`EXISTS (
             SELECT 1 FROM jsonb_array_elements(${clients.codes}) AS code_elem
             WHERE code_elem->>'code' ILIKE ${searchPattern}
