@@ -208,10 +208,12 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                {clients.map((client) => {
+                  const displayPhone = client.phone && client.phone.trim().length > 0 ? client.phone : "No phone provided";
+                  return (
+                    <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
                     <TableCell className="font-medium" data-testid={`text-name-${client.id}`}>
-                      {client.name}
+                      {displayPhone}
                     </TableCell>
                     <TableCell data-testid={`text-phone-${client.id}`}>
                       <div className="flex items-center gap-2">
@@ -236,7 +238,8 @@ export default function Dashboard() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
