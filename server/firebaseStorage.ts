@@ -97,8 +97,8 @@ export const firebaseStorage = {
     
     return allClients.filter(client => 
       client.name.toLowerCase().includes(lowerQuery) ||
-      client.phone.toLowerCase().includes(lowerQuery) ||
-      client.codes.some(code => 
+      (client.phone?.toLowerCase().includes(lowerQuery) || false) ||
+      client.codes.some(code =>
         code.code.toLowerCase().includes(lowerQuery) ||
         code.service.toLowerCase().includes(lowerQuery)
       )
