@@ -106,7 +106,7 @@ export default function Clients() {
     const headers = ["Name", "Phone", "Services"];
     const rows = clients.map(client => [
       client.name,
-      client.phone,
+      client.phone && client.phone.trim().length > 0 ? client.phone : "",
       client.codes.map(c => `${c.service}: ${c.code}`).join("; "),
     ]);
 
@@ -134,7 +134,7 @@ export default function Clients() {
 
     const tableData = clients.map((client: FirestoreClient) => [
       client.name,
-      client.phone,
+      client.phone && client.phone.trim().length > 0 ? client.phone : "",
       client.codes.map(c => `${c.service}: ${c.code}`).join("\n"),
     ]);
 
@@ -185,7 +185,7 @@ export default function Clients() {
     const content = clients.map((client: FirestoreClient) => `
       <div class="client">
         <div class="client-name">${client.name}</div>
-        <div>📞 ${client.phone}</div>
+        <div>📞 ${client.phone && client.phone.trim().length > 0 ? client.phone : "No phone provided"}</div>
         ${client.codes.map(code => `
           <div class="code-item">${code.service}: ${code.code}</div>
         `).join("")}
