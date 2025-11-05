@@ -12,6 +12,7 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client, onEdit, onDelete, onClick }: ClientCardProps) {
+  const displayPhone = client.phone && client.phone.trim().length > 0 ? client.phone : "No phone provided";
   return (
     <Card 
       className="p-6 hover-elevate cursor-pointer" 
@@ -26,7 +27,7 @@ export function ClientCard({ client, onEdit, onDelete, onClick }: ClientCardProp
           <div className="flex flex-col gap-1 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Phone className="h-3 w-3" />
-              <span data-testid={`text-client-phone-${client.id}`}>{client.phone}</span>
+              <span data-testid={`text-client-phone-${client.id}`}>{displayPhone}</span>
             </div>
           </div>
           {client.codes.length > 0 && (
