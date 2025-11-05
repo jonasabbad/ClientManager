@@ -86,7 +86,24 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
   };
 
   const handleFormSubmit = (data: InsertClient) => {
-    onSubmit?.(data);
+    const sanitizedName = data.name.trim();
+    const sanitizedPhone = data.phone?.trim();
+    const sanitizedCodes = data.codes.map(code => ({
+      ...code,
+      code: code.code.trim(),
+      accountHolderName: code.accountHolderName?.trim() || undefined,
+      address: code.address?.trim() || undefined,
+      phoneNumber: code.phoneNumber?.trim() || undefined,
+    }));
+
+    const payload: InsertClient = {
+      ...data,
+      name: sanitizedName,
+      phone: sanitizedPhone ? sanitizedPhone : undefined,
+      codes: sanitizedCodes,
+    };
+
+    onSubmit?.(payload);
     form.reset();
     onOpenChange(false);
   };
@@ -124,7 +141,7 @@ export function AddClientDialog({ open, onOpenChange, onSubmit }: AddClientDialo
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Phone Number (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="+212 6XX XXX XXX"
