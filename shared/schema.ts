@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  phone: text("phone").notNull(),
+  phone: text("phone"),
   codes: jsonb("codes").notNull().$type<{ 
     service: string; 
     code: string;
@@ -58,10 +58,14 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
-
+const phoneSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value === "" ? undefined : value));
 export const insertClientSchema = createInsertSchema(clients, {
   name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone is required"),
+  phone: phoneSchema,
   codes: z.array(z.object({
     service: z.string().min(1, "Service type is required"),
     code: z.string().min(1, "Code is required"),
