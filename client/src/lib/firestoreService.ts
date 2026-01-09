@@ -35,6 +35,48 @@ export type FirestoreClient = {
 };
 
 export const firestoreService = {
+  normalizeServiceCode(code: {
+    service: string;
+    code: string;
+    accountHolderName?: string;
+    address?: string;
+    phoneNumber?: string;
+  }) {
+    const normalizedCode: {
+      service: string;
+      code: string;
+      accountHolderName?: string;
+      address?: string;
+      phoneNumber?: string;
+    } = {
+      ...code,
+      code: typeof code.code === "string" ? code.code.trim() : code.code,
+    };
+
+    const accountHolderName = code.accountHolderName?.trim();
+    const address = code.address?.trim();
+    const phoneNumber = code.phoneNumber?.trim();
+
+    if (accountHolderName) {
+      normalizedCode.accountHolderName = accountHolderName;
+    } else {
+      delete normalizedCode.accountHolderName;
+    }
+
+    if (address) {
+      normalizedCode.address = address;
+    } else {
+      delete normalizedCode.address;
+    }
+
+    if (phoneNumber) {
+      normalizedCode.phoneNumber = phoneNumber;
+    } else {
+      delete normalizedCode.phoneNumber;
+    }
+
+    return normalizedCode;
+  },
   // Clients
   async getAllClients(): Promise<FirestoreClient[]> {
     const querySnapshot = await getDocs(collection(db, 'clients'));
@@ -61,13 +103,7 @@ export const firestoreService = {
       name: sanitizedName,
       id: nextId,
       createdAt: new Date().toISOString(),
-      codes: (data.codes || []).map((code) => ({
-        ...code,
-        accountHolderName: code.accountHolderName?.trim() || undefined,
-        address: code.address?.trim() || undefined,
-        phoneNumber: code.phoneNumber?.trim() || undefined,
-        code: typeof code.code === "string" ? code.code.trim() : code.code,
-      })),
+      codes: (data.codes || []).map((code) => this.normalizeServiceCode(code)),
     };
     if (sanitizedPhone) {
       clientData.phone = sanitizedPhone;
@@ -97,13 +133,7 @@ export const firestoreService = {
     const docRef = querySnapshot.docs[0].ref;
     const existingData = querySnapshot.docs[0].data() as FirestoreClient;
     const sanitizedPhone = data.phone?.trim();
-    const sanitizedCodes = data.codes?.map((code) => ({
-      ...code,
-      accountHolderName: code.accountHolderName?.trim() || undefined,
-      address: code.address?.trim() || undefined,
-      phoneNumber: code.phoneNumber?.trim() || undefined,
-      code: typeof code.code === "string" ? code.code.trim() : code.code,
-    }));
+    const sanitizedCodes = data.codes?.map((code) => this.normalizeServiceCode(code));
 
     const updatedData: Record<string, any> = {
       ...data,
