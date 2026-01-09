@@ -48,7 +48,7 @@ export function SmartSearch({ clients }: SmartSearchProps) {
     const filtered = clients.filter((client: FirestoreClient) => {
       const nameMatch = client.name.toLowerCase().includes(query);
       // For phone matching: use raw comparison always, and normalized only if query has digits
-      cconst phoneMatch = client.phone ? (
+      const phoneMatch = client.phone ? (
         client.phone.toLowerCase().includes(query) ||
         (hasDigits && normalizePhone(client.phone).includes(normalizedQuery))
       ) : false;
