@@ -96,7 +96,7 @@ export const firestoreService = {
       query(collection(db, 'clients'), orderBy('id', 'desc'), limit(1))
     );
     const nextId = clientsSnapshot.empty ? 1 : (clientsSnapshot.docs[0].data().id + 1);
-    const sanitizedName = data.name.trim();
+    const sanitizedName = data.name.trim().toUpperCase();
     const sanitizedPhone = data.phone?.trim();
     const clientData: FirestoreClient = {
       ...data,
@@ -117,8 +117,8 @@ export const firestoreService = {
     await this.createActivity({
       action: 'created',
       clientId: nextId,
-      clientName: data.name,
-      description: `Created client ${data.name}`,
+      clientName: sanitizedName,
+      description: `Created client ${sanitizedName}`,
       createdAt: new Date().toISOString(),
     });
 
@@ -140,6 +140,9 @@ export const firestoreService = {
       codes: sanitizedCodes ?? data.codes,
       updatedAt: new Date().toISOString(),
     };
+    if (data.name !== undefined) {
+      updatedData.name = data.name.trim().toUpperCase();
+    }
     if (updatedData.codes === undefined) {
       delete updatedData.codes;
     }
@@ -161,7 +164,7 @@ export const firestoreService = {
     const refreshedData = refreshedSnapshot.data() as FirestoreClient | undefined;
 
     // Create activity log - use existing client name if name not in update
-    const clientName = data.name || existingData.name;
+    const clientName = data.name ? data.name.trim().toUpperCase() : existingData.name;
     await this.createActivity({
       action: 'updated',
       clientId: id,
