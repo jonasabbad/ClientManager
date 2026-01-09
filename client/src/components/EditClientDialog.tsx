@@ -60,7 +60,7 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
     const payload: Partial<InsertClient> = {
       ...data,
       name: sanitizedName,
-      phone: sanitizedPhone ? sanitizedPhone : undefined,
+      phone: sanitizedPhone === "" ? "" : sanitizedPhone,
       codes: sanitizedCodes,
     };
 
