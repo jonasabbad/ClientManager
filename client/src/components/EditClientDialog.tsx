@@ -48,7 +48,8 @@ export function EditClientDialog({ client, open, onOpenChange, onSubmit }: EditC
 
   const handleFormSubmit = (data: InsertClient) => {
     const sanitizedName = data.name.trim();
-    const sanitizedPhone = data.phone?.trim();
+    const rawPhone = form.getValues("phone");
+    const sanitizedPhone = rawPhone?.trim();
     const sanitizedCodes = data.codes.map(code => ({
       ...code,
       code: code.code.trim(),
